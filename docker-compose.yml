@@ -1,0 +1,70 @@
+# ByteBlaster — one-command deployment.
+#
+#   docker compose up --build
+#
+#   Frontend → http://localhost:8080
+#   Backend  → http://localhost:8000  (mostly handy for debugging)
+#
+# In the office: put this on a fixed host and open port 8080. Anyone on the
+# office network is identified automatically by IP (see TRUSTED_PROXIES).
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: byteblaster
+      POSTGRES_PASSWORD: byteblaster
+      POSTGRES_DB: byteblaster
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U byteblaster"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  backend:
+    build:
+      context: ./backend
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      BYTEBLASTER_DATABASE_URL: postgresql+asyncpg://byteblaster:byteblaster@db:5432/byteblaster
+      BYTEBLASTER_STORAGE_DIR: /data/sounds
+      BYTEBLASTER_MAX_UPLOAD_BYTES: "10485760"
+      # Trust the bundled nginx (frontend container) and standard Docker private
+      # ranges to forward X-Forwarded-For. Adjust if running behind an extra
+      # reverse proxy that lives in a different subnet.
+      # Pydantic-settings parses list[str] env vars as JSON.
+      BYTEBLASTER_TRUSTED_PROXIES: '["172.16.0.0/12","10.0.0.0/8","192.168.0.0/16"]'
+      # Same-origin via the frontend's nginx → CORS not needed. Empty list is safe.
+      BYTEBLASTER_CORS_ORIGINS: "[]"
+    volumes:
+      - sounddata:/data/sounds
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/healthz').read()"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 20s
+    expose:
+      - "8000"
+    ports:
+      - "8000:8000"   # comment out in production if direct access is unwanted
+
+  frontend:
+    build:
+      context: ./frontend
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - "8080:80"
+
+volumes:
+  pgdata:
+  sounddata:

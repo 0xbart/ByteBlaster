@@ -1,0 +1,63 @@
+/* Dark-mode tweaks for Buefy/Bulma tags so the "is-light" variants don't
+   look washed out on a dark background. Scoped via [data-theme="dark"]. */
+
+[data-theme="dark"] .tag:not(.is-primary):not(.is-info):not(.is-success):not(.is-warning):not(.is-danger):not(.is-light) {
+  background-color: rgba(255, 255, 255, 0.14);
+  color: #f2f2f2;
+  font-weight: 500;
+}
+
+[data-theme="dark"] .tag.is-light {
+  background-color: rgba(255, 255, 255, 0.14);
+  color: #f2f2f2;
+  font-weight: 500;
+}
+
+[data-theme="dark"] .tag.is-info.is-light {
+  background-color: hsl(204, 70%, 30%);
+  color: hsl(204, 95%, 92%);
+  font-weight: 500;
+}
+
+[data-theme="dark"] .tag.is-success.is-light {
+  background-color: hsl(141, 55%, 28%);
+  color: hsl(141, 80%, 90%);
+  font-weight: 500;
+}
+
+[data-theme="dark"] .tag.is-warning.is-light {
+  background-color: hsl(44, 70%, 32%);
+  color: hsl(44, 95%, 88%);
+  font-weight: 500;
+}
+
+[data-theme="dark"] .tag.is-danger.is-light {
+  background-color: hsl(348, 75%, 38%);
+  color: hsl(348, 95%, 92%);
+  font-weight: 500;
+}
+
+/* Sound-button chips: contrast against button bg in both themes.
+   Dark mode: button is-dark → chip light bg + dark text.
+   Light mode: button is-dark is-inverted (white bg) → chip dark bg + light text. */
+.tag-chip {
+  font-weight: 700 !important;
+}
+[data-theme="dark"] .tag-chip {
+  background-color: hsl(0, 0%, 92%) !important;
+  color: hsl(0, 0%, 12%) !important;
+}
+:root:not([data-theme="dark"]) .tag-chip {
+  background-color: hsl(0, 0%, 18%) !important;
+  color: hsl(0, 0%, 96%) !important;
+}
+
+/* The colored solid tags keep good contrast as-is; just nudge the success
+   "live" tag so it doesn't blow out against the dark navbar. */
+[data-theme="dark"] .navbar .tag.is-success {
+  background-color: hsl(141, 53%, 35%);
+}
+[data-theme="dark"] .navbar .tag.is-warning {
+  background-color: hsl(44, 80%, 35%);
+  color: #fff;
+}

@@ -1,0 +1,93 @@
+# ByteBlaster — development stack with hot-reload.
+#
+#   docker compose -f docker-compose.dev.yml up
+#
+#   Frontend (Vite dev server, HMR) → http://localhost:5173
+#   Backend  (uvicorn --reload)      → http://localhost:8000
+#
+# Source code is mounted from the host; changes in backend/app/* or
+# frontend/src/* trigger an automatic reload.
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: byteblaster
+      POSTGRES_PASSWORD: byteblaster
+      POSTGRES_DB: byteblaster
+    volumes:
+      - pgdata_dev:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U byteblaster"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    ports:
+      - "5432:5432"
+
+  backend:
+    image: python:3.12-slim
+    working_dir: /app
+    depends_on:
+      db:
+        condition: service_healthy
+    # Explicit public DNS — the embedded 127.0.0.11 resolver forwards to the
+    # host, which on a VM/VPN can be unreachable and break URL downloads.
+    dns:
+      - 1.1.1.1
+      - 8.8.8.8
+    environment:
+      BYTEBLASTER_DATABASE_URL: postgresql+asyncpg://byteblaster:byteblaster@db:5432/byteblaster
+      BYTEBLASTER_STORAGE_DIR: /data/sounds
+      BYTEBLASTER_MAX_UPLOAD_BYTES: "10485760"
+      BYTEBLASTER_TRUSTED_PROXIES: '["172.16.0.0/12","10.0.0.0/8","192.168.0.0/16"]'
+      BYTEBLASTER_CORS_ORIGINS: '["http://localhost:5173"]'
+      PYTHONDONTWRITEBYTECODE: "1"
+      PYTHONUNBUFFERED: "1"
+    volumes:
+      - ./backend:/app
+      - sounddata_dev:/data/sounds
+      - pip_cache:/root/.cache/pip
+    command:
+      - sh
+      - -c
+      - |
+        pip install -e . && \
+        alembic upgrade head && \
+        uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload --reload-dir app --proxy-headers --forwarded-allow-ips='*'
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/healthz').read()"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+      start_period: 60s
+    ports:
+      - "8000:8000"
+
+  frontend:
+    image: node:20-alpine
+    working_dir: /app
+    depends_on:
+      backend:
+        condition: service_healthy
+    environment:
+      BACKEND_URL: http://backend:8000
+      CHOKIDAR_USEPOLLING: "true"
+    volumes:
+      - ./frontend:/app
+      - frontend_node_modules:/app/node_modules
+    command:
+      - sh
+      - -c
+      - |
+        npm install && \
+        npx --yes openapi-typescript http://backend:8000/openapi.json -o src/api/schema.d.ts && \
+        npm run dev -- --host 0.0.0.0
+    ports:
+      - "5173:5173"
+
+volumes:
+  pgdata_dev:
+  sounddata_dev:
+  pip_cache:
+  frontend_node_modules:
