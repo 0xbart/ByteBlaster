@@ -36,6 +36,17 @@
         </div>
         <a
           class="navbar-item theme-toggle"
+          :title="audio.muted ? 'Unmute sounds' : 'Mute sounds'"
+          @click="audio.toggle"
+        >
+          <b-icon
+            :icon="audio.muted ? 'volume-mute' : 'volume-high'"
+            pack="fas"
+            size="is-small"
+          />
+        </a>
+        <a
+          class="navbar-item theme-toggle"
           :title="theme.isDark ? 'Switch to light mode' : 'Switch to dark mode'"
           @click="theme.toggle"
         >
@@ -47,6 +58,20 @@
         </a>
       </div>
     </nav>
+
+    <div v-if="!audioUnlocked" class="audio-locked-banner">
+      <b-icon icon="volume-mute" pack="fas" size="is-small" class="mr-2" />
+      Click anywhere to enable sounds from other users
+    </div>
+    <div
+      v-else-if="audioPlaying"
+      class="audio-playing-banner"
+      role="button"
+      @click="audioStop"
+    >
+      <b-icon icon="stop" pack="fas" size="is-small" class="mr-2" />
+      Click to stop playing sound
+    </div>
 
     <main class="section">
       <div class="container">
@@ -91,7 +116,9 @@ import { useTagsStore } from "./stores/tags";
 import { useStatsStore } from "./stores/stats";
 import { usePresenceStore } from "./stores/presence";
 import { useThemeStore } from "./stores/theme";
+import { useAudioStore } from "./stores/audio";
 import { useWebSocket } from "./composables/useWebSocket";
+import { useAudioPlayer } from "./composables/useAudioPlayer";
 
 const userStore = useUserStore();
 const categoriesStore = useCategoriesStore();
@@ -99,12 +126,21 @@ const tagsStore = useTagsStore();
 const statsStore = useStatsStore();
 const presence = usePresenceStore();
 const theme = useThemeStore();
+const audio = useAudioStore();
 const { me, loaded, needsClaim, isAdmin, isSuperadmin } = storeToRefs(userStore);
 
 const view = ref<"board" | "admin">("board");
 const presenceOpen = ref(false);
 
 const { connected: wsConnected } = useWebSocket();
+const { unlocked: audioUnlocked, playing: audioPlaying, stopAll: audioStop } = useAudioPlayer();
+
+watch(
+  () => audio.muted,
+  (m) => {
+    if (m) audioStop();
+  },
+);
 
 function onLiveClick(): void {
   if (wsConnected.value) presenceOpen.value = true;
@@ -162,5 +198,28 @@ watch(
   display: flex;
   flex-direction: column;
   gap: 1rem;
+}
+.audio-locked-banner,
+.audio-playing-banner {
+  position: fixed;
+  top: 3.25rem;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  background: hsl(44, 100%, 50%);
+  color: #1a1a1a;
+  text-align: center;
+  padding: 0.4rem 1rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+.audio-playing-banner {
+  background: hsl(348, 80%, 55%);
+  color: #fff;
+  cursor: pointer;
+  user-select: none;
 }
 </style>

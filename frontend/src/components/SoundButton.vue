@@ -2,7 +2,11 @@
   <div class="sound-button">
     <button
       class="button is-medium is-fullwidth"
-      :class="theme.isDark ? 'is-dark' : 'is-dark is-inverted'"
+      :class="{
+        'is-dark': theme.isDark,
+        'no-tags': !sound.tags.length,
+        'has-tags': sound.tags.length,
+      }"
       :title="tooltip"
       @click="onPlay"
     >
@@ -82,12 +86,24 @@ function confirmDelete(): void {
 .sound-button {
   position: relative;
 }
+.sound-button :deep(.button.is-fullwidth) {
+  min-height: 2.5em;
+  height: auto;
+}
 .sound-label {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   display: block;
   max-width: 100%;
+  font-size: 0.95rem;
+}
+.sound-button :deep(.button.no-tags) {
+  align-items: flex-start;
+  padding-top: 0.6em;
+}
+.has-tags .sound-label {
+  transform: translateY(-10px);
 }
 .tag-chips {
   position: absolute;
