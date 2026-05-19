@@ -166,6 +166,7 @@ watch(
 
 <style scoped>
 .app-shell {
+  position: relative;
   min-height: 100vh;
   /* Bulma's scheme-main flips automatically with [data-theme="dark"]. */
   background: var(--bulma-scheme-main, #f5f5f7);
@@ -201,7 +202,7 @@ watch(
 }
 .audio-locked-banner,
 .audio-playing-banner {
-  position: fixed;
+  position: absolute;
   top: 3.25rem;
   left: 0;
   right: 0;
