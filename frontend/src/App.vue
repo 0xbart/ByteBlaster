@@ -72,6 +72,10 @@
       <b-icon icon="stop" pack="fas" size="is-small" class="mr-2" />
       Click to stop playing sound
     </div>
+    <div v-if="soundsStore.rateLimited" class="audio-rate-banner">
+      <b-icon icon="bell-slash" pack="fas" size="is-small" class="mr-2" />
+      {{ soundsStore.rateLimited }}
+    </div>
 
     <main class="section">
       <div class="container">
@@ -117,6 +121,7 @@ import { useStatsStore } from "./stores/stats";
 import { usePresenceStore } from "./stores/presence";
 import { useThemeStore } from "./stores/theme";
 import { useAudioStore } from "./stores/audio";
+import { useSoundsStore } from "./stores/sounds";
 import { useWebSocket } from "./composables/useWebSocket";
 import { useAudioPlayer } from "./composables/useAudioPlayer";
 
@@ -127,6 +132,7 @@ const statsStore = useStatsStore();
 const presence = usePresenceStore();
 const theme = useThemeStore();
 const audio = useAudioStore();
+const soundsStore = useSoundsStore();
 const { me, loaded, needsClaim, isAdmin, isSuperadmin } = storeToRefs(userStore);
 
 const view = ref<"board" | "admin">("board");
@@ -222,5 +228,21 @@ watch(
   color: #fff;
   cursor: pointer;
   user-select: none;
+}
+.audio-rate-banner {
+  position: absolute;
+  top: 3.25rem;
+  left: 0;
+  right: 0;
+  z-index: 1001;
+  background: hsl(28, 95%, 50%);
+  color: #1a1a1a;
+  text-align: center;
+  padding: 0.4rem 1rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
 }
 </style>

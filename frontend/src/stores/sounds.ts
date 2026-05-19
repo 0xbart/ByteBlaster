@@ -108,12 +108,36 @@ export const useSoundsStore = defineStore("sounds", () => {
     return false;
   }
 
+  const rateLimited = ref<string | null>(null);
+  let rateLimitTimer: number | null = null;
+
   async function play(id: number): Promise<void> {
     // We deliberately do NOT play locally — wait for the WS broadcast so every
     // connected client (including ourselves) plays via the same codepath.
-    await api.POST("/api/sounds/{sound_id}/play", {
+    const { response } = await api.POST("/api/sounds/{sound_id}/play", {
       params: { path: { sound_id: id } },
     });
+    if (response.status === 429) {
+      let msg = "Slow down — too many plays.";
+      try {
+        const body = (await response.clone().json()) as { detail?: string };
+        if (body.detail) msg = body.detail;
+      } catch {
+        // ignore
+      }
+      rateLimited.value = msg;
+      if (rateLimitTimer !== null) window.clearTimeout(rateLimitTimer);
+      rateLimitTimer = window.setTimeout(() => {
+        rateLimited.value = null;
+        rateLimitTimer = null;
+      }, 5000);
+    } else if (response.ok) {
+      if (rateLimitTimer !== null) {
+        window.clearTimeout(rateLimitTimer);
+        rateLimitTimer = null;
+      }
+      rateLimited.value = null;
+    }
   }
 
   function upsert(sound: SoundOut): void {
@@ -153,6 +177,7 @@ export const useSoundsStore = defineStore("sounds", () => {
     sortedByName,
     loading,
     error,
+    rateLimited,
     refresh,
     upload,
     update,

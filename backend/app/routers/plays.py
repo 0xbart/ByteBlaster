@@ -1,13 +1,41 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, HTTPException, Query, status
+import time
+from collections import defaultdict, deque
+
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 
+from ..config import Settings, get_settings
 from ..deps import CurrentUser, DbSession
-from ..models import Play, Sound
+from ..models import Play, Sound, User
 from ..schemas import PlayOut, WsPlayEvent
 from ..ws.manager import manager
+
+
+# In-memory sliding window: user_id -> deque of recent play timestamps.
+# Single-process only; fine for office-scale.
+_recent: dict[int, deque[float]] = defaultdict(deque)
+
+
+def _check_rate_limit(user: User, settings: Settings) -> None:
+    if user.is_superadmin or settings.rate_limit_plays <= 0:
+        return
+    window = settings.rate_limit_window_seconds
+    now = time.monotonic()
+    cutoff = now - window
+    bucket = _recent[user.id]
+    while bucket and bucket[0] < cutoff:
+        bucket.popleft()
+    if len(bucket) >= settings.rate_limit_plays:
+        retry_in = max(0, int(window - (now - bucket[0]) + 1))
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail=f"Rate limit: max {settings.rate_limit_plays} plays per {window}s. Try again in {retry_in}s.",
+            headers={"Retry-After": str(retry_in)},
+        )
+    bucket.append(now)
 
 router = APIRouter(tags=["plays"])
 
@@ -24,7 +52,13 @@ def _to_out(play: Play) -> PlayOut:
 
 
 @router.post("/sounds/{sound_id}/play", response_model=PlayOut, status_code=status.HTTP_201_CREATED)
-async def play_sound(sound_id: int, user: CurrentUser, session: DbSession) -> PlayOut:
+async def play_sound(
+    sound_id: int,
+    user: CurrentUser,
+    session: DbSession,
+    settings: Settings = Depends(get_settings),
+) -> PlayOut:
+    _check_rate_limit(user, settings)
     sound = await session.get(Sound, sound_id)
     if sound is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)

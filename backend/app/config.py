@@ -21,6 +21,11 @@ class Settings(BaseSettings):
     # Leave empty in dev to use request.client.host directly.
     trusted_proxies: list[str] = Field(default_factory=list)
 
+    # Per-user rate limit on POST /sounds/{id}/play.
+    # Superadmins are exempt. Set rate_limit_plays=0 to disable.
+    rate_limit_plays: int = 5
+    rate_limit_window_seconds: int = 10
+
 
 @lru_cache
 def get_settings() -> Settings:

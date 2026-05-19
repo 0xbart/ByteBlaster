@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- Drum body -->
+  <ellipse cx="32" cy="22" rx="20" ry="6" fill="#facc15" stroke="#7c2d12" stroke-width="2"/>
+  <path d="M12 22 v20 a20 6 0 0 0 40 0 v-20" fill="#dc2626" stroke="#7c2d12" stroke-width="2"/>
+  <ellipse cx="32" cy="22" rx="20" ry="6" fill="#fde68a"/>
+  <!-- Zig-zag lacing -->
+  <path d="M14 26 L20 38 L26 26 L32 38 L38 26 L44 38 L50 26" fill="none" stroke="#1f2937" stroke-width="2" stroke-linecap="round"/>
+  <!-- Sticks -->
+  <line x1="44" y1="6" x2="56" y2="20" stroke="#a16207" stroke-width="3" stroke-linecap="round"/>
+  <line x1="52" y1="4" x2="60" y2="14" stroke="#a16207" stroke-width="3" stroke-linecap="round"/>
+</svg>
