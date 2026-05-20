@@ -96,7 +96,7 @@ function confirmDelete(): void {
   text-overflow: ellipsis;
   display: block;
   max-width: 100%;
-  font-size: 0.95rem;
+  font-size: 0.8rem;
 }
 .sound-button :deep(.button.no-tags) {
   align-items: flex-start;

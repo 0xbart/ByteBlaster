@@ -18,10 +18,16 @@
         Upload sound
       </b-button>
     </div>
-    <p class="search-hint has-text-grey is-size-7 mb-3">
+    <p class="search-hint has-text-grey is-size-7 mb-1">
       Tip: combine filters — <code>tag:fun</code>, <code>cat:FX</code>,
       <code>tag:"my tag"</code>, joined with <code>AND</code>. Enter plays the
       result if only one match remains.
+    </p>
+    <p class="search-hint has-text-grey is-size-7 mb-3">
+      Tip 2: click a category header to collapse or expand it.
+      <a class="collapse-link" @click="expandAll">Expand all</a>
+      <span class="has-text-grey-light"> · </span>
+      <a class="collapse-link" @click="collapseAll">Collapse all</a>
     </p>
 
     <div v-if="sounds.loading" class="has-text-centered py-5">
@@ -32,8 +38,21 @@
     </div>
     <div v-else class="sound-groups">
       <section v-for="g in groupedVisible" :key="g.key" class="sound-group">
-        <h3 class="sound-group__title">{{ g.label }}</h3>
-        <div class="sound-grid">
+        <h3
+          class="sound-group__title"
+          role="button"
+          @click="toggleGroup(g.key)"
+        >
+          <b-icon
+            :icon="isCollapsed(g.key) ? 'circle-chevron-up' : 'circle-chevron-down'"
+            pack="fas"
+            size="is-small"
+            class="mr-2"
+          />
+          <span>{{ g.label }}</span>
+          <span class="sound-group__count">{{ g.sounds.length }}</span>
+        </h3>
+        <div v-show="!isCollapsed(g.key)" class="sound-grid">
           <SoundButton v-for="s in g.sounds" :key="s.id" :sound="s" />
         </div>
       </section>
@@ -53,6 +72,23 @@ const sounds = useSoundsStore();
 const showUpload = ref(false);
 const filter = ref("");
 const filterInput = ref<{ focus?: () => void } | null>(null);
+const collapsed = ref<Set<string>>(new Set());
+
+function isCollapsed(key: string): boolean {
+  return collapsed.value.has(key);
+}
+function toggleGroup(key: string): void {
+  const next = new Set(collapsed.value);
+  if (next.has(key)) next.delete(key);
+  else next.add(key);
+  collapsed.value = next;
+}
+function expandAll(): void {
+  collapsed.value = new Set();
+}
+function collapseAll(): void {
+  collapsed.value = new Set(groupedVisible.value.map((g) => g.key));
+}
 
 interface ParsedQuery {
   tags: string[];
@@ -185,6 +221,16 @@ function onFilterEnter(): void {
   flex: 1 1 240px;
   min-width: 200px;
 }
+.collapse-link {
+  cursor: pointer;
+  color: inherit;
+  text-decoration: none;
+  border-bottom: 1px dotted currentColor;
+  opacity: 0.7;
+}
+.collapse-link:hover {
+  opacity: 1;
+}
 .sound-groups {
   margin-top: 1rem;
 }
@@ -192,12 +238,26 @@ function onFilterEnter(): void {
   margin-top: 1.25rem;
 }
 .sound-group__title {
+  display: flex;
+  align-items: center;
   font-size: 0.85rem;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   color: #555;
   margin-bottom: 0.5rem;
+  padding-bottom: 0.35rem;
+  border-bottom: 1px solid var(--bulma-border-weak, rgba(128, 128, 128, 0.22));
+  cursor: pointer;
+  user-select: none;
+}
+.sound-group__count {
+  margin-left: 0.5rem;
+  background: var(--bulma-scheme-main-ter, rgba(0, 0, 0, 0.1));
+  color: inherit;
+  border-radius: 999px;
+  padding: 0 0.5rem;
+  font-size: 0.75rem;
 }
 .sound-grid {
   display: grid;

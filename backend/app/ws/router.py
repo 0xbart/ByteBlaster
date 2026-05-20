@@ -32,7 +32,13 @@ async def ws_endpoint(
 
     await manager.connect(
         websocket,
-        WsClient(user_id=user.id, username=user.username, ip=str(user.ip)),
+        WsClient(
+            user_id=user.id,
+            username=user.username,
+            ip=str(user.ip),
+            is_admin=user.is_admin,
+            is_superadmin=user.is_superadmin,
+        ),
     )
     try:
         while True:

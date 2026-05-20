@@ -5,7 +5,9 @@
       <header class="modal-card-head">
         <p class="modal-card-title">
           Live users
-          <span class="tag is-success ml-2">{{ presence.count }}</span>
+          <span class="tag is-success ml-2">
+            {{ presence.count }} user{{ presence.count === 1 ? "" : "s" }}
+          </span>
         </p>
         <button class="delete" aria-label="close" @click="emit('close')" />
       </header>
@@ -14,6 +16,7 @@
           <thead>
             <tr>
               <th>Name</th>
+              <th>Role</th>
               <th>IP</th>
             </tr>
           </thead>
@@ -22,6 +25,11 @@
               <td>
                 {{ u.username }}
                 <span v-if="u.id === me?.id" class="tag is-info is-light ml-2">you</span>
+              </td>
+              <td>
+                <span v-if="u.is_superadmin" class="tag is-warning is-light">superadmin</span>
+                <span v-else-if="u.is_admin" class="tag is-success">admin</span>
+                <span v-else class="tag">user</span>
               </td>
               <td><code>{{ u.ip }}</code></td>
             </tr>
