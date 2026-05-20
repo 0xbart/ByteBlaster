@@ -13,14 +13,14 @@ dev:
 
 prod:
 	docker compose -f docker-compose.yml up -d
+
 down:
 	docker compose down
+
 clean:
 	docker compose down -v --rmi all --remove-orphans
+
 rebuild:
 	docker compose down
 	docker compose build --no-cache
 	docker compose up -d
-
-
-
