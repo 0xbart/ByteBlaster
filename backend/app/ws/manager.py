@@ -16,6 +16,8 @@ class WsClient:
     user_id: int
     username: str
     ip: str
+    is_admin: bool = False
+    is_superadmin: bool = False
 
 
 class ConnectionManager:
@@ -64,7 +66,13 @@ class ConnectionManager:
         from ..schemas import PresenceUser, WsPresenceEvent
 
         users = [
-            PresenceUser(id=c.user_id, username=c.username, ip=c.ip)
+            PresenceUser(
+                id=c.user_id,
+                username=c.username,
+                ip=c.ip,
+                is_admin=c.is_admin,
+                is_superadmin=c.is_superadmin,
+            )
             for c in self.online_users()
         ]
         await self.broadcast(WsPresenceEvent(users=users))

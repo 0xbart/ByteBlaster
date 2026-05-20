@@ -2,11 +2,26 @@
   <aside class="history-panel">
     <h2 class="title is-5">Recently played</h2>
     <div class="scroll-area">
-      <ul v-if="history.plays.length" class="history-list">
-        <li v-for="(p, i) in history.plays" :key="`${p.id}-${i}`">
-          <strong>{{ p.played_by_username }}</strong>
-          played <em>{{ p.sound_display_name }}</em>
-          <span class="has-text-grey is-size-7"> · {{ relativeTime(p.played_at) }}</span>
+      <ul v-if="history.items.length" class="history-list">
+        <li v-for="it in history.items" :key="it.key">
+          <template v-if="it.kind === 'play'">
+            <b-icon icon="circle-play" pack="fas" size="is-small" class="play-icon" />
+            <strong class="play-user">{{ it.username }}</strong>
+            <em class="play-name">{{ it.soundName }}</em>
+            <span class="play-time has-text-grey is-size-7">{{ relativeTime(it.at) }}</span>
+          </template>
+          <template v-else-if="it.kind === 'join'">
+            <b-icon icon="link" pack="fas" size="is-small" class="play-icon" />
+            <strong class="play-user">{{ it.username }}</strong>
+            <em class="play-name has-text-grey">came online</em>
+            <span class="play-time has-text-grey is-size-7">{{ relativeTime(it.at) }}</span>
+          </template>
+          <template v-else>
+            <b-icon icon="link-slash" pack="fas" size="is-small" class="play-icon" />
+            <strong class="play-user">{{ it.username }}</strong>
+            <em class="play-name has-text-grey">went offline</em>
+            <span class="play-time has-text-grey is-size-7">{{ relativeTime(it.at) }}</span>
+          </template>
         </li>
       </ul>
       <p v-else class="has-text-grey">No plays yet.</p>
@@ -50,8 +65,28 @@ function relativeTime(iso: string): string {
   padding: 0;
 }
 .history-list li {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
   padding: 0.25rem 0;
   border-bottom: 1px solid #eee;
+}
+.play-icon {
+  flex: 0 0 auto;
+}
+.play-user {
+  flex: 0 0 auto;
+}
+.play-name {
+  flex: 1 1 auto;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.play-time {
+  flex: 0 0 auto;
+  white-space: nowrap;
 }
 .history-list li:last-child {
   border-bottom: none;

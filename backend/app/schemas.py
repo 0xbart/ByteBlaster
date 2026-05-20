@@ -156,6 +156,8 @@ class PresenceUser(BaseModel):
     id: int
     username: str
     ip: str
+    is_admin: bool = False
+    is_superadmin: bool = False
 
     @field_validator("ip", mode="before")
     @classmethod

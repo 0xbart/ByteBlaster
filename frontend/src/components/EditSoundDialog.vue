@@ -25,7 +25,7 @@
             autocomplete
             open-on-focus
             allow-new
-            maxtags="10"
+            :maxtags="10"
             placeholder="Type and press enter"
           />
         </b-field>

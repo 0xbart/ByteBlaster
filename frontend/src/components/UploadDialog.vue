@@ -7,32 +7,44 @@
         <button class="delete" aria-label="close" @click="emit('close')" />
       </header>
       <section class="modal-card-body">
-        <b-field label="File (mp3 or wav, max 10 MB)">
+        <b-field label="Files (mp3 or wav, max 10 MB each)">
           <b-upload
-            v-model="file"
+            v-model="files"
             accept=".mp3,.wav,audio/mpeg,audio/wav,audio/x-wav"
             drag-drop
             expanded
+            multiple
             :disabled="!!url.trim()"
           >
             <section class="upload-droparea has-text-centered p-4">
-              <p v-if="!file" class="has-text-grey">Drop a file here or click to choose.</p>
-              <p v-else>{{ file.name }} — {{ (file.size / 1024).toFixed(0) }} KB</p>
+              <p v-if="!files.length" class="has-text-grey">
+                Drop one or more files here or click to choose.
+              </p>
+              <p v-else-if="files.length === 1">
+                {{ files[0].name }} — {{ (files[0].size / 1024).toFixed(0) }} KB
+              </p>
+              <p v-else>{{ files.length }} files selected</p>
             </section>
           </b-upload>
         </b-field>
-        <p class="has-text-grey has-text-centered is-size-7 my-2">— or —</p>
-        <b-field label="URL (direct link to mp3/wav)">
-          <b-input
-            v-model="url"
-            placeholder="https://example.com/sound.mp3"
-            type="url"
-            :disabled="!!file"
-          />
-        </b-field>
-        <b-field label="Display name">
-          <b-input v-model="displayName" maxlength="120" placeholder="e.g. Airhorn" />
-        </b-field>
+        <p v-if="isBatch" class="has-text-grey is-size-7 mb-3">
+          Batch upload: display names are taken from each file name. Tags and
+          category below apply to all.
+        </p>
+        <template v-if="!isBatch">
+          <p class="has-text-grey has-text-centered is-size-7 my-2">— or —</p>
+          <b-field label="URL (direct link to mp3/wav)">
+            <b-input
+              v-model="url"
+              placeholder="https://example.com/sound.mp3"
+              type="url"
+              :disabled="!!files.length"
+            />
+          </b-field>
+          <b-field label="Display name">
+            <b-input v-model="displayName" maxlength="120" placeholder="e.g. Airhorn" />
+          </b-field>
+        </template>
         <b-field label="Tags (optional)">
           <b-taginput
             v-model="tags"
@@ -40,7 +52,7 @@
             autocomplete
             open-on-focus
             allow-new
-            maxtags="10"
+            :maxtags="10"
             placeholder="Type and press enter (e.g. computer, fun)"
           />
         </b-field>
@@ -83,16 +95,22 @@ const emit = defineEmits<(e: "close") => void>();
 const sounds = useSoundsStore();
 const categories = useCategoriesStore();
 const tagsStore = useTagsStore();
-const file = ref<File | null>(null);
+const files = ref<File[]>([]);
 const url = ref("");
 const displayName = ref("");
 const categoryId = ref<number | null>(null);
 const tags = ref<string[]>([]);
 const submitting = ref(false);
 
+const isBatch = computed(() => files.value.length > 1);
+
 const tagSuggestions = computed(() =>
   tagsStore.tags.map((t) => t.name).filter((n) => !tags.value.includes(n))
 );
+
+function stripExt(name: string): string {
+  return name.replace(/\.[^.]+$/, "");
+}
 
 function basenameFromUrl(raw: string): string {
   try {
@@ -104,9 +122,9 @@ function basenameFromUrl(raw: string): string {
   }
 }
 
-watch(file, (f) => {
-  if (f && !displayName.value) {
-    displayName.value = f.name.replace(/\.[^.]+$/, "");
+watch(files, (f) => {
+  if (f.length === 1 && !displayName.value) {
+    displayName.value = stripExt(f[0].name);
   }
 });
 
@@ -118,26 +136,36 @@ watch(url, (u) => {
 });
 
 const canSubmit = computed(() => {
-  const hasSource = !!file.value || url.value.trim().length > 0;
-  return hasSource && displayName.value.trim().length > 0 && !submitting.value;
+  if (submitting.value) return false;
+  if (isBatch.value) return true;
+  const hasSource = files.value.length === 1 || url.value.trim().length > 0;
+  return hasSource && displayName.value.trim().length > 0;
 });
 
 async function submit(): Promise<void> {
-  const source: File | string | null = file.value
-    ? file.value
-    : url.value.trim() || null;
-  if (!source) return;
   submitting.value = true;
-  const ok = await sounds.upload(
-    source,
-    displayName.value.trim(),
-    categoryId.value,
-    tags.value,
-  );
-  submitting.value = false;
-  if (ok) {
-    tagsStore.upsertNames(tags.value);
-    emit("close");
+  try {
+    if (isBatch.value) {
+      let allOk = true;
+      for (const f of files.value) {
+        const ok = await sounds.upload(f, stripExt(f.name), categoryId.value, tags.value);
+        if (!ok) allOk = false;
+      }
+      if (allOk) {
+        tagsStore.upsertNames(tags.value);
+        emit("close");
+      }
+      return;
+    }
+    const source: File | string | null = files.value[0] ?? url.value.trim() ?? null;
+    if (!source) return;
+    const ok = await sounds.upload(source, displayName.value.trim(), categoryId.value, tags.value);
+    if (ok) {
+      tagsStore.upsertNames(tags.value);
+      emit("close");
+    }
+  } finally {
+    submitting.value = false;
   }
 }
 </script>
