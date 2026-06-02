@@ -15,9 +15,10 @@ router = APIRouter(prefix="/explore", tags=["explore"])
 
 _BASE = "https://www.myinstants.com"
 _SEARCH_URL = f"{_BASE}/en/search/"
-_UA = "Mozilla/5.0 (compatible; ByteBlaster/1.0)"
+_UA = "Mozilla/5.0"
 _TTL_SECONDS = 60.0
 _PLAY_RE = re.compile(r"play\(\s*['\"]([^'\"]+\.mp3)['\"]")
+_TITLE_PAGE_RE = re.compile(r"Page\s+\d+\s+of\s+(\d+)", re.IGNORECASE)
 _cache: dict[tuple[str, int], tuple[ExploreSearchOut, float]] = {}
 
 
@@ -61,16 +62,29 @@ def _parse_results(html: str, query: str, page: int) -> ExploreSearchOut:
         results.append(ExploreResult(title=title, mp3_url=absolute))
 
     has_more = False
-    next_link = soup.select_one('a[rel="next"]')
-    if next_link is not None:
-        has_more = True
-    else:
-        # Fallback: search for pagination anchor containing page={page+1}
-        for a in soup.select("a"):
-            href = a.get("href", "")
-            if f"page={page + 1}" in href:
+
+    title_tag = soup.find("title")
+    if title_tag:
+        m = _TITLE_PAGE_RE.search(title_tag.get_text())
+        if m:
+            total_pages = int(m.group(1))
+            has_more = page < total_pages
+
+    if not has_more:
+        next_link = soup.select_one('a[rel="next"]')
+        if next_link is not None:
+            has_more = True
+        else:
+            # Fallback: search for pagination anchor containing page={page+1}
+            for a in soup.select("a"):
+                href = a.get("href", "")
+                if f"page={page + 1}" in href:
+                    has_more = True
+                    break
+
+            if page == 1 and len(results) == 36:
+                # page X of X not found on page=1, assume that there might be more
                 has_more = True
-                break
 
     return ExploreSearchOut(query=query, page=page, results=results, has_more=has_more)
 

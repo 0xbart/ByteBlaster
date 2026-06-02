@@ -55,21 +55,14 @@
       No results.
     </div>
 
-    <div v-if="explore.results.length" class="pagination-footer mt-4">
+    <div v-if="explore.results.length && explore.hasMore" class="pagination-footer mt-4">
       <b-button
-        icon-left="chevron-left"
-        :disabled="explore.page <= 1 || explore.loading"
-        @click="explore.prevPage"
+        icon-left="plus"
+        :loading="explore.loading"
+        :disabled="explore.loading"
+        @click="explore.loadMore"
       >
-        Previous
-      </b-button>
-      <span class="has-text-grey">Page {{ explore.page }}</span>
-      <b-button
-        icon-right="chevron-right"
-        :disabled="!explore.hasMore || explore.loading"
-        @click="explore.nextPage"
-      >
-        Next
+        More
       </b-button>
     </div>
 

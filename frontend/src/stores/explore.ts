@@ -20,37 +20,44 @@ export const useExploreStore = defineStore("explore", () => {
     error.value = null;
   }
 
-  async function search(q: string, p = 1): Promise<void> {
-    query.value = q;
-    page.value = p;
-    results.value = [];
-    hasMore.value = false;
-    error.value = null;
+  async function _fetch(q: string, p: number, append: boolean): Promise<void> {
     loading.value = true;
+    error.value = null;
     const { data, response } = await api.GET("/api/explore/search", {
       params: { query: { q, page: p } },
     });
     if (data) {
-      results.value = data.results;
+      results.value = append ? [...results.value, ...data.results] : data.results;
       hasMore.value = data.has_more;
+      page.value = p;
+      query.value = q;
     } else if (response.status === 502 || response.status === 504) {
       error.value = "Myinstants is not reachable right now.";
-      results.value = [];
-      hasMore.value = false;
+      if (!append) {
+        results.value = [];
+        hasMore.value = false;
+      }
     } else {
       error.value = "Search failed.";
-      results.value = [];
-      hasMore.value = false;
+      if (!append) {
+        results.value = [];
+        hasMore.value = false;
+      }
     }
     loading.value = false;
   }
 
-  function nextPage(): void {
-    if (!loading.value && hasMore.value) void search(query.value, page.value + 1);
-  }
-  function prevPage(): void {
-    if (!loading.value && page.value > 1) void search(query.value, page.value - 1);
+  async function search(q: string): Promise<void> {
+    results.value = [];
+    hasMore.value = false;
+    page.value = 1;
+    await _fetch(q, 1, false);
   }
 
-  return { query, page, results, hasMore, loading, error, search, nextPage, prevPage, reset };
+  async function loadMore(): Promise<void> {
+    if (loading.value || !hasMore.value) return;
+    await _fetch(query.value, page.value + 1, true);
+  }
+
+  return { query, page, results, hasMore, loading, error, search, loadMore, reset };
 });
