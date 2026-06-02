@@ -97,6 +97,21 @@ class UserStatOut(BaseModel):
     play_count: int
 
 
+class CategoryStatOut(BaseModel):
+    category_id: int | None
+    category_name: str | None
+    play_count: int
+
+
+class OverviewStatOut(BaseModel):
+    total_sounds: int
+    total_users: int
+    total_plays: int
+    plays_day: int
+    plays_week: int
+    plays_month: int
+
+
 class PlayOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 

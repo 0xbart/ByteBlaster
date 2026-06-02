@@ -2,7 +2,9 @@ import { defineStore } from "pinia";
 import { ref } from "vue";
 
 import { api } from "@/api";
-import type { SoundStatOut, UserStatOut } from "@/api";
+import type { SoundStatOut, UserStatOut, CategoryStatOut, OverviewStatOut } from "@/api";
+
+export type StatsWindow = "day" | "week" | "month" | "all";
 
 function sortSoundStats(list: SoundStatOut[]): void {
   list.sort(
@@ -67,5 +69,56 @@ export const useStatsStore = defineStore("stats", () => {
     trending.value = trending.value.filter((s) => s.sound_id !== soundId);
   }
 
-  return { allTime, trending, users, loading, refresh, bump, removeSound };
+  // --- Stats tab (separate snapshot, explicit refresh, not WS-driven) ---
+  const tabWindow = ref<StatsWindow>("week");
+  const tabOverview = ref<OverviewStatOut | null>(null);
+  const tabSounds = ref<SoundStatOut[]>([]);
+  const tabUsers = ref<UserStatOut[]>([]);
+  const tabCategories = ref<CategoryStatOut[]>([]);
+  const tabLoading = ref(false);
+
+  async function refreshTab(): Promise<void> {
+    tabLoading.value = true;
+    const w = tabWindow.value;
+    const [o, s, u, c] = await Promise.all([
+      api.GET("/api/stats/overview"),
+      api.GET("/api/stats/sounds/top", {
+        params: { query: { window: w, limit: 10 } },
+      }),
+      api.GET("/api/stats/users/top", {
+        params: { query: { window: w, limit: 20 } },
+      }),
+      api.GET("/api/stats/categories", {
+        params: { query: { window: w } },
+      }),
+    ]);
+    if (o.data) tabOverview.value = o.data;
+    if (s.data) tabSounds.value = s.data;
+    if (u.data) tabUsers.value = u.data;
+    if (c.data) tabCategories.value = c.data;
+    tabLoading.value = false;
+  }
+
+  function setTabWindow(w: StatsWindow): void {
+    tabWindow.value = w;
+    void refreshTab();
+  }
+
+  return {
+    allTime,
+    trending,
+    users,
+    loading,
+    refresh,
+    bump,
+    removeSound,
+    tabWindow,
+    tabOverview,
+    tabSounds,
+    tabUsers,
+    tabCategories,
+    tabLoading,
+    refreshTab,
+    setTabWindow,
+  };
 });

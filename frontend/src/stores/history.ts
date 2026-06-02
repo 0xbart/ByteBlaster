@@ -7,7 +7,7 @@ import type { PlayOut } from "@/api";
 const MAX_ITEMS = 50;
 
 export type FeedItem =
-  | { kind: "play"; key: string; username: string; soundName: string; at: string }
+  | { kind: "play"; key: string; soundId: number; username: string; soundName: string; at: string }
   | { kind: "join"; key: string; username: string; at: string }
   | { kind: "leave"; key: string; username: string; at: string };
 
@@ -22,6 +22,7 @@ export const useHistoryStore = defineStore("history", () => {
       items.value = data.map((p: PlayOut) => ({
         kind: "play" as const,
         key: `play-${p.id}`,
+        soundId: p.sound_id,
         username: p.played_by_username,
         soundName: p.sound_display_name,
         at: p.played_at,
@@ -34,6 +35,7 @@ export const useHistoryStore = defineStore("history", () => {
       {
         kind: "play",
         key: `play-${entry.id}-${Date.now()}`,
+        soundId: entry.sound_id,
         username: entry.played_by_username,
         soundName: entry.sound_display_name,
         at: entry.played_at,

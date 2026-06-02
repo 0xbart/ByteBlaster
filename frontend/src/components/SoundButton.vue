@@ -23,7 +23,7 @@
         tabindex="-1"
         @click.stop="editOpen = true"
       >
-        <i class="mdi mdi-pencil" aria-hidden="true" />
+        <i class="fas fa-pencil" aria-hidden="true" />
       </button>
       <button
         v-if="canDelete"
@@ -32,7 +32,7 @@
         tabindex="-1"
         @click.stop="deleteOpen = true"
       >
-        <i class="mdi mdi-delete" aria-hidden="true" />
+        <i class="fas fa-trash" aria-hidden="true" />
       </button>
     </div>
 

@@ -23,7 +23,7 @@
           <b-button @click="emit('close')">Cancel</b-button>
           <b-button
             type="is-primary"
-            icon-left="content-save"
+            icon-left="floppy-disk"
             :disabled="!canSubmit"
             :loading="loading"
             @click="onConfirm"

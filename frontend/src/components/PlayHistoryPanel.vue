@@ -5,7 +5,13 @@
       <ul v-if="history.items.length" class="history-list">
         <li v-for="it in history.items" :key="it.key">
           <template v-if="it.kind === 'play'">
-            <b-icon icon="circle-play" pack="fas" size="is-small" class="play-icon" />
+            <b-icon
+              icon="circle-play"
+              pack="fas"
+              size="is-small"
+              class="play-icon play-icon--clickable"
+              @click="sounds.play(it.soundId)"
+            />
             <strong class="play-user">{{ it.username }}</strong>
             <em class="play-name">{{ it.soundName }}</em>
             <span class="play-time has-text-grey is-size-7">{{ relativeTime(it.at) }}</span>
@@ -30,18 +36,29 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted } from "vue";
+import { onMounted, onBeforeUnmount, ref } from "vue";
 import { useHistoryStore } from "@/stores/history";
+import { useSoundsStore } from "@/stores/sounds";
 
 const history = useHistoryStore();
+const sounds = useSoundsStore();
+const now = ref(Date.now());
+let ticker: number | null = null;
 
 onMounted(() => {
   void history.refresh();
+  ticker = window.setInterval(() => {
+    now.value = Date.now();
+  }, 15_000);
+});
+
+onBeforeUnmount(() => {
+  if (ticker !== null) window.clearInterval(ticker);
 });
 
 function relativeTime(iso: string): string {
   const t = new Date(iso).getTime();
-  const s = Math.max(0, Math.floor((Date.now() - t) / 1000));
+  const s = Math.max(0, Math.floor((now.value - t) / 1000));
   if (s < 60) return `${s}s ago`;
   if (s < 3600) return `${Math.floor(s / 60)}m ago`;
   if (s < 86400) return `${Math.floor(s / 3600)}h ago`;
@@ -83,6 +100,9 @@ function relativeTime(iso: string): string {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+.play-icon--clickable {
+  cursor: pointer;
 }
 .play-time {
   flex: 0 0 auto;

@@ -11,6 +11,13 @@
           <span class="title is-5 has-text-white mb-0">ByteBlaster</span>
         </a>
         <a
+          class="navbar-item has-text-white"
+          :class="{ 'is-active': view === 'stats' }"
+          @click="view = 'stats'"
+        >
+          Stats
+        </a>
+        <a
           v-if="isAdmin"
           class="navbar-item has-text-white"
           :class="{ 'is-active': view === 'admin' }"
@@ -93,6 +100,7 @@
               <ActiveUsersPanel />
             </div>
           </div>
+          <StatsView v-if="view === 'stats'" />
           <AdminPanel v-if="view === 'admin' && isAdmin" />
         </template>
       </div>
@@ -110,6 +118,7 @@ import ClaimUsernameDialog from "./components/ClaimUsernameDialog.vue";
 import SoundBoard from "./components/SoundBoard.vue";
 import PlayHistoryPanel from "./components/PlayHistoryPanel.vue";
 import MostPlayedPanel from "./components/MostPlayedPanel.vue";
+import StatsView from "./components/StatsView.vue";
 import TrendingPanel from "./components/TrendingPanel.vue";
 import ActiveUsersPanel from "./components/ActiveUsersPanel.vue";
 import AdminPanel from "./components/AdminPanel.vue";
@@ -135,7 +144,7 @@ const audio = useAudioStore();
 const soundsStore = useSoundsStore();
 const { me, loaded, needsClaim, isAdmin, isSuperadmin } = storeToRefs(userStore);
 
-const view = ref<"board" | "admin">("board");
+const view = ref<"board" | "stats" | "admin">("board");
 const presenceOpen = ref(false);
 
 const { connected: wsConnected } = useWebSocket();

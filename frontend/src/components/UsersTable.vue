@@ -34,7 +34,7 @@
               >
                 {{ u.is_admin ? "Demote" : "Promote to admin" }}
               </b-button>
-              <b-button size="is-small" type="is-danger" icon-left="delete" @click="deleting = u">
+              <b-button size="is-small" type="is-danger" icon-left="trash" @click="deleting = u">
                 Delete
               </b-button>
             </template>

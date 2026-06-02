@@ -15,3 +15,5 @@ export type CategoryOut = components["schemas"]["CategoryOut"];
 export type TagOut = components["schemas"]["TagOut"];
 export type SoundStatOut = components["schemas"]["SoundStatOut"];
 export type UserStatOut = components["schemas"]["UserStatOut"];
+export type CategoryStatOut = components["schemas"]["CategoryStatOut"];
+export type OverviewStatOut = components["schemas"]["OverviewStatOut"];

@@ -282,6 +282,74 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/stats/overview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Stats Overview */
+        get: operations["stats_overview"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/stats/sounds/top": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Stats Top Sounds */
+        get: operations["stats_top_sounds"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/stats/users/top": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Stats Top Users */
+        get: operations["stats_top_users"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/stats/categories": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Stats Categories */
+        get: operations["stats_categories"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/healthz": {
         parameters: {
             query?: never;
@@ -341,6 +409,15 @@ export interface components {
              */
             sound_count: number;
         };
+        /** CategoryStatOut */
+        CategoryStatOut: {
+            /** Category Id */
+            category_id: number | null;
+            /** Category Name */
+            category_name: string | null;
+            /** Play Count */
+            play_count: number;
+        };
         /** ClaimIn */
         ClaimIn: {
             /** Username */
@@ -358,6 +435,21 @@ export interface components {
             needs_claim: boolean;
             /** Ip */
             ip: string;
+        };
+        /** OverviewStatOut */
+        OverviewStatOut: {
+            /** Total Sounds */
+            total_sounds: number;
+            /** Total Users */
+            total_users: number;
+            /** Total Plays */
+            total_plays: number;
+            /** Plays Day */
+            plays_day: number;
+            /** Plays Week */
+            plays_week: number;
+            /** Plays Month */
+            plays_month: number;
         };
         /** PlayOut */
         PlayOut: {
@@ -492,6 +584,11 @@ export interface components {
             /** Context */
             ctx?: Record<string, never>;
         };
+        /**
+         * Window
+         * @enum {string}
+         */
+        Window: "day" | "week" | "month" | "all";
     };
     responses: never;
     parameters: never;
@@ -1119,6 +1216,121 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SoundStatOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    stats_overview: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OverviewStatOut"];
+                };
+            };
+        };
+    };
+    stats_top_sounds: {
+        parameters: {
+            query?: {
+                window?: components["schemas"]["Window"];
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SoundStatOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    stats_top_users: {
+        parameters: {
+            query?: {
+                window?: components["schemas"]["Window"];
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserStatOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    stats_categories: {
+        parameters: {
+            query?: {
+                window?: components["schemas"]["Window"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CategoryStatOut"][];
                 };
             };
             /** @description Validation Error */
