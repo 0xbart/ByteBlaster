@@ -35,8 +35,12 @@
         <i class="fas fa-trash" aria-hidden="true" />
       </button>
       <button
-        class="button is-small action-btn"
-        :class="sound.is_favorite ? 'is-warning' : 'is-light'"
+        class="button is-small action-btn favorite-btn"
+        :class="[
+          sound.is_favorite
+            ? 'action-btn--pinned favorite-btn--active'
+            : 'is-light',
+        ]"
         :title="sound.is_favorite ? 'Remove from favorites' : 'Add to favorites'"
         tabindex="-1"
         @click.stop="onToggleFavorite($event)"
@@ -142,14 +146,6 @@ function onToggleFavorite(ev: MouseEvent): void {
   right: -8px;
   display: flex;
   gap: 4px;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.12s ease-in-out;
-}
-.sound-button:hover .overlay-actions,
-.sound-button:focus-within .overlay-actions {
-  opacity: 1;
-  pointer-events: auto;
 }
 .action-btn {
   border-radius: 50%;
@@ -160,5 +156,22 @@ function onToggleFavorite(ev: MouseEvent): void {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.12s ease-in-out;
+}
+.sound-button:hover .action-btn,
+.sound-button:focus-within .action-btn,
+.action-btn--pinned {
+  opacity: 1;
+  pointer-events: auto;
+}
+.favorite-btn--active {
+  background-color: hsl(48, 95%, 65%);
+  color: hsl(36, 60%, 22%);
+  border-color: transparent;
+}
+.favorite-btn--active:hover {
+  background-color: hsl(48, 95%, 58%);
 }
 </style>

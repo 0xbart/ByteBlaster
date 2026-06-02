@@ -158,7 +158,6 @@ interface SoundGroup {
   sounds: SoundItem[];
 }
 const UNCATEGORIZED_KEY = "__uncategorized__";
-const FAVORITES_KEY = "__favorites__";
 
 const groupedVisible = computed<SoundGroup[]>(() => {
   const byCat = new Map<string | null, SoundItem[]>();
@@ -179,11 +178,6 @@ const groupedVisible = computed<SoundGroup[]>(() => {
   const uncategorized = byCat.get(null);
   if (uncategorized && uncategorized.length > 0) {
     named.push({ key: UNCATEGORIZED_KEY, label: "Uncategorized", sounds: uncategorized });
-  }
-
-  const favs = visible.value.filter((s) => s.is_favorite);
-  if (favs.length > 0) {
-    return [{ key: FAVORITES_KEY, label: "Favorites", sounds: favs }, ...named];
   }
   return named;
 });
