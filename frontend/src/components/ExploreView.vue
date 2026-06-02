@@ -39,7 +39,7 @@
       >
         <span class="explore-name">{{ r.title }}</span>
         <button
-          class="button is-small is-primary add-btn"
+          class="button is-small is-info add-btn"
           title="Add to soundboard"
           tabindex="-1"
           @click.stop="onAdd(r)"
@@ -170,6 +170,14 @@ function onAdd(r: ExploreResult): void {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.12s ease-in-out;
+}
+.explore-card:hover .add-btn,
+.explore-card:focus-within .add-btn {
+  opacity: 1;
+  pointer-events: auto;
 }
 .pagination-footer {
   display: flex;
