@@ -113,6 +113,18 @@ class OverviewStatOut(BaseModel):
     plays_month: int
 
 
+class ExploreResult(BaseModel):
+    title: str
+    mp3_url: str
+
+
+class ExploreSearchOut(BaseModel):
+    query: str
+    page: int
+    results: list[ExploreResult]
+    has_more: bool
+
+
 class PlayOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 

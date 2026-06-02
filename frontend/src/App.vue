@@ -12,6 +12,13 @@
         </a>
         <a
           class="navbar-item has-text-white"
+          :class="{ 'is-active': view === 'explore' }"
+          @click="view = 'explore'"
+        >
+          Explore
+        </a>
+        <a
+          class="navbar-item has-text-white"
           :class="{ 'is-active': view === 'stats' }"
           @click="view = 'stats'"
         >
@@ -100,6 +107,7 @@
               <ActiveUsersPanel />
             </div>
           </div>
+          <ExploreView v-if="view === 'explore'" />
           <StatsView v-if="view === 'stats'" />
           <AdminPanel v-if="view === 'admin' && isAdmin" />
         </template>
@@ -119,6 +127,7 @@ import SoundBoard from "./components/SoundBoard.vue";
 import PlayHistoryPanel from "./components/PlayHistoryPanel.vue";
 import MostPlayedPanel from "./components/MostPlayedPanel.vue";
 import StatsView from "./components/StatsView.vue";
+import ExploreView from "./components/ExploreView.vue";
 import TrendingPanel from "./components/TrendingPanel.vue";
 import ActiveUsersPanel from "./components/ActiveUsersPanel.vue";
 import AdminPanel from "./components/AdminPanel.vue";
@@ -144,7 +153,7 @@ const audio = useAudioStore();
 const soundsStore = useSoundsStore();
 const { me, loaded, needsClaim, isAdmin, isSuperadmin } = storeToRefs(userStore);
 
-const view = ref<"board" | "stats" | "admin">("board");
+const view = ref<"board" | "stats" | "admin" | "explore">("board");
 const presenceOpen = ref(false);
 
 const { connected: wsConnected } = useWebSocket();

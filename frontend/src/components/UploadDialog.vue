@@ -90,14 +90,19 @@ import { useSoundsStore } from "@/stores/sounds";
 import { useCategoriesStore } from "@/stores/categories";
 import { useTagsStore } from "@/stores/tags";
 
+const props = defineProps<{
+  initialUrl?: string;
+  initialName?: string;
+}>();
+
 const emit = defineEmits<(e: "close") => void>();
 
 const sounds = useSoundsStore();
 const categories = useCategoriesStore();
 const tagsStore = useTagsStore();
 const files = ref<File[]>([]);
-const url = ref("");
-const displayName = ref("");
+const url = ref(props.initialUrl ?? "");
+const displayName = ref(props.initialName ?? "");
 const categoryId = ref<number | null>(null);
 const tags = ref<string[]>([]);
 const submitting = ref(false);

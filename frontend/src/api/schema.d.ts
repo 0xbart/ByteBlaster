@@ -368,6 +368,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/explore/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Search Explore */
+        get: operations["search_explore"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/healthz": {
         parameters: {
             query?: never;
@@ -440,6 +457,24 @@ export interface components {
         ClaimIn: {
             /** Username */
             username: string;
+        };
+        /** ExploreResult */
+        ExploreResult: {
+            /** Title */
+            title: string;
+            /** Mp3 Url */
+            mp3_url: string;
+        };
+        /** ExploreSearchOut */
+        ExploreSearchOut: {
+            /** Query */
+            query: string;
+            /** Page */
+            page: number;
+            /** Results */
+            results: components["schemas"]["ExploreResult"][];
+            /** Has More */
+            has_more: boolean;
         };
         /** HTTPValidationError */
         HTTPValidationError: {
@@ -1414,6 +1449,38 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CategoryStatOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    search_explore: {
+        parameters: {
+            query: {
+                q: string;
+                page?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExploreSearchOut"];
                 };
             };
             /** @description Validation Error */
