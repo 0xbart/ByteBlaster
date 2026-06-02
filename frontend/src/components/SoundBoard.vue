@@ -5,13 +5,13 @@
         ref="filterInput"
         v-model="filter"
         placeholder="e.g. airhorn"
-        icon="magnifying-glass"
+        icon="magnify"
         clearable
         autofocus
         class="filter-input"
         @keyup.enter="onFilterEnter"
       />
-      <b-button type="is-info" icon-left="dice" @click="onRandom" :disabled="!sounds.sortedByName.length">
+      <b-button type="is-info" icon-left="dice-6" @click="onRandom" :disabled="!sounds.sortedByName.length">
         Random
       </b-button>
       <b-button type="is-primary" icon-left="upload" @click="showUpload = true">

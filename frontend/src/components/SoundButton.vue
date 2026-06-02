@@ -138,8 +138,12 @@ function confirmDelete(): void {
 }
 .action-btn {
   border-radius: 50%;
-  padding: 0 8px;
-  height: 24px;
+  padding: 0;
+  width: 28px;
+  height: 28px;
   line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 </style>

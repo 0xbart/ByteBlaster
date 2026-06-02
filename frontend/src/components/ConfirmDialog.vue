@@ -12,7 +12,7 @@
       <footer class="modal-card-foot is-justify-content-flex-end">
         <div class="buttons confirm-buttons mb-0">
           <b-button @click="emit('close')">{{ cancelLabel }}</b-button>
-          <b-button :type="confirmType" icon-left="trash" @click="onConfirm">
+          <b-button :type="confirmType" icon-left="delete" @click="onConfirm">
             {{ confirmLabel }}
           </b-button>
         </div>

@@ -31,7 +31,7 @@
             >
               Edit
             </b-button>
-            <b-button size="is-small" type="is-danger" icon-left="trash" @click="deleting = t">
+            <b-button size="is-small" type="is-danger" icon-left="delete" @click="deleting = t">
               Delete
             </b-button>
           </td>

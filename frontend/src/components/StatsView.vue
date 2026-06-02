@@ -39,7 +39,7 @@
         </b-button>
       </div>
       <b-button
-        icon-left="rotate"
+        icon-left="refresh"
         :loading="stats.tabLoading"
         @click="stats.refreshTab()"
       >

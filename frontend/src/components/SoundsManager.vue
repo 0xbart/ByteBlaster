@@ -4,7 +4,7 @@
     <b-input
       v-model="filter"
       placeholder="Search by name, uploader, or tag"
-      icon="magnifying-glass"
+      icon="magnify"
       clearable
       class="mb-3"
     />
@@ -45,7 +45,7 @@
             <b-button
               size="is-small"
               type="is-danger"
-              icon-left="trash"
+              icon-left="delete"
               @click="deleting = s"
             >
               Delete
