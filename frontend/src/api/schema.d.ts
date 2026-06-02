@@ -74,6 +74,24 @@ export interface paths {
         patch: operations["patch_sound"];
         trace?: never;
     };
+    "/api/sounds/{sound_id}/favorite": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Favorite Sound */
+        post: operations["favorite_sound"];
+        /** Unfavorite Sound */
+        delete: operations["unfavorite_sound"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/sounds/{sound_id}/file": {
         parameters: {
             query?: never;
@@ -496,6 +514,11 @@ export interface components {
             created_at: string;
             /** Url */
             url: string;
+            /**
+             * Is Favorite
+             * @default false
+             */
+            is_favorite: boolean;
         };
         /** SoundPatchIn */
         SoundPatchIn: {
@@ -756,6 +779,66 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["SoundOut"];
                 };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    favorite_sound: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                sound_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SoundOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    unfavorite_sound: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                sound_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Validation Error */
             422: {

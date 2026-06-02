@@ -142,8 +142,41 @@ export const useSoundsStore = defineStore("sounds", () => {
 
   function upsert(sound: SoundOut): void {
     const idx = sounds.value.findIndex((s) => s.id === sound.id);
-    if (idx >= 0) sounds.value[idx] = sound;
-    else sounds.value.unshift(sound);
+    if (idx >= 0) {
+      // is_favorite is per-user; WS broadcasts ship false for everyone, so
+      // preserve the local flag instead of overwriting it.
+      const prev = sounds.value[idx];
+      sounds.value[idx] = { ...sound, is_favorite: prev.is_favorite || sound.is_favorite };
+    } else {
+      sounds.value.unshift(sound);
+    }
+  }
+
+  async function favorite(id: number): Promise<boolean> {
+    const { data, response } = await api.POST("/api/sounds/{sound_id}/favorite", {
+      params: { path: { sound_id: id } },
+    });
+    if (data) {
+      const idx = sounds.value.findIndex((s) => s.id === id);
+      if (idx >= 0) sounds.value[idx] = { ...sounds.value[idx], is_favorite: true };
+      else sounds.value.unshift(data);
+      return true;
+    }
+    error.value = response.status === 404 ? "Sound not found." : "Favorite failed.";
+    return false;
+  }
+
+  async function unfavorite(id: number): Promise<boolean> {
+    const { response } = await api.DELETE("/api/sounds/{sound_id}/favorite", {
+      params: { path: { sound_id: id } },
+    });
+    if (response.status === 204) {
+      const idx = sounds.value.findIndex((s) => s.id === id);
+      if (idx >= 0) sounds.value[idx] = { ...sounds.value[idx], is_favorite: false };
+      return true;
+    }
+    error.value = "Unfavorite failed.";
+    return false;
   }
 
   function removeLocal(id: number): void {
@@ -183,6 +216,8 @@ export const useSoundsStore = defineStore("sounds", () => {
     update,
     remove,
     play,
+    favorite,
+    unfavorite,
     upsert,
     removeLocal,
     stripTag,

@@ -73,6 +73,7 @@ class SoundOut(BaseModel):
     tags: list[str]
     created_at: datetime
     url: str
+    is_favorite: bool = False
 
 
 class SoundPatchIn(BaseModel):

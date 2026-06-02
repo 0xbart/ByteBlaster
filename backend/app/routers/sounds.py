@@ -2,11 +2,12 @@ from __future__ import annotations
 
 from fastapi import APIRouter, File, Form, HTTPException, UploadFile, status
 from fastapi.responses import FileResponse
-from sqlalchemy import select
+from sqlalchemy import delete, select
+from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.orm import selectinload
 
 from ..deps import AdminUser, CurrentUser, DbSession, SettingsDep
-from ..models import Category, Sound
+from ..models import Category, Sound, sound_favorites
 from ..schemas import SoundOut, SoundPatchIn, WsSoundAddedEvent, WsSoundRemovedEvent, WsSoundUpdatedEvent
 from ..services import storage
 from ..services.download import derive_filename_from_url, download_url
@@ -16,7 +17,7 @@ from ..ws.manager import manager
 router = APIRouter(prefix="/sounds", tags=["sounds"])
 
 
-def _to_out(sound: Sound) -> SoundOut:
+def _to_out(sound: Sound, favorite_ids: set[int] | frozenset[int] = frozenset()) -> SoundOut:
     return SoundOut(
         id=sound.id,
         display_name=sound.display_name,
@@ -29,7 +30,20 @@ def _to_out(sound: Sound) -> SoundOut:
         tags=sorted(t.name for t in sound.tags),
         created_at=sound.created_at,
         url=f"/api/sounds/{sound.id}/file",
+        is_favorite=sound.id in favorite_ids,
     )
+
+
+async def _is_fav(session, user_id: int, sound_id: int) -> bool:
+    r = await session.execute(
+        select(sound_favorites.c.sound_id)
+        .where(
+            sound_favorites.c.user_id == user_id,
+            sound_favorites.c.sound_id == sound_id,
+        )
+        .limit(1)
+    )
+    return r.first() is not None
 
 
 async def _load_full(session, sound_id: int) -> Sound | None:
@@ -46,7 +60,7 @@ async def _load_full(session, sound_id: int) -> Sound | None:
 
 
 @router.get("", response_model=list[SoundOut])
-async def list_sounds(session: DbSession, _: CurrentUser) -> list[SoundOut]:
+async def list_sounds(session: DbSession, user: CurrentUser) -> list[SoundOut]:
     result = await session.execute(
         select(Sound)
         .options(
@@ -56,7 +70,11 @@ async def list_sounds(session: DbSession, _: CurrentUser) -> list[SoundOut]:
         )
         .order_by(Sound.created_at.desc())
     )
-    return [_to_out(s) for s in result.scalars().all()]
+    fav_rows = await session.execute(
+        select(sound_favorites.c.sound_id).where(sound_favorites.c.user_id == user.id)
+    )
+    fav_ids = {row[0] for row in fav_rows.all()}
+    return [_to_out(s, fav_ids) for s in result.scalars().all()]
 
 
 @router.post("", response_model=SoundOut, status_code=status.HTTP_201_CREATED)
@@ -163,6 +181,39 @@ async def delete_sound(sound_id: int, user: CurrentUser, session: DbSession) -> 
     await session.delete(sound)
     await session.commit()
     await manager.broadcast(WsSoundRemovedEvent(sound_id=sound_id))
+
+
+@router.post("/{sound_id}/favorite", response_model=SoundOut)
+async def favorite_sound(
+    sound_id: int, user: CurrentUser, session: DbSession
+) -> SoundOut:
+    sound = await _load_full(session, sound_id)
+    if sound is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+    stmt = (
+        pg_insert(sound_favorites)
+        .values(user_id=user.id, sound_id=sound_id)
+        .on_conflict_do_nothing(index_elements=["user_id", "sound_id"])
+    )
+    await session.execute(stmt)
+    await session.commit()
+    return _to_out(sound, frozenset({sound_id}))
+
+
+@router.delete("/{sound_id}/favorite", status_code=status.HTTP_204_NO_CONTENT)
+async def unfavorite_sound(
+    sound_id: int, user: CurrentUser, session: DbSession
+) -> None:
+    sound = await session.get(Sound, sound_id)
+    if sound is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+    await session.execute(
+        delete(sound_favorites).where(
+            sound_favorites.c.user_id == user.id,
+            sound_favorites.c.sound_id == sound_id,
+        )
+    )
+    await session.commit()
 
 
 @router.get("/{sound_id}/file")

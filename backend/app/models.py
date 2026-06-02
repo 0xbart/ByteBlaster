@@ -18,6 +18,21 @@ sound_tags = Table(
 )
 
 
+sound_favorites = Table(
+    "sound_favorites",
+    Base.metadata,
+    Column("user_id", Integer, ForeignKey("users.id", ondelete="CASCADE"), primary_key=True),
+    Column("sound_id", Integer, ForeignKey("sounds.id", ondelete="CASCADE"), primary_key=True),
+    Column(
+        "created_at",
+        DateTime(timezone=True),
+        server_default=func.now(),
+        nullable=False,
+    ),
+    Index("ix_sound_favorites_user", "user_id"),
+)
+
+
 class User(Base):
     __tablename__ = "users"
 

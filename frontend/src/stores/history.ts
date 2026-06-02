@@ -33,7 +33,7 @@ export const useHistoryStore = defineStore("history", () => {
   function prependPlay(entry: PlayOut): void {
     items.value = [
       {
-        kind: "play",
+        kind: "play" as const,
         key: `play-${entry.id}-${Date.now()}`,
         soundId: entry.sound_id,
         username: entry.played_by_username,
@@ -47,7 +47,7 @@ export const useHistoryStore = defineStore("history", () => {
   function prependJoin(username: string): void {
     items.value = [
       {
-        kind: "join",
+        kind: "join" as const,
         key: `join-${username}-${Date.now()}`,
         username,
         at: new Date().toISOString(),
@@ -59,7 +59,7 @@ export const useHistoryStore = defineStore("history", () => {
   function prependLeave(username: string): void {
     items.value = [
       {
-        kind: "leave",
+        kind: "leave" as const,
         key: `leave-${username}-${Date.now()}`,
         username,
         at: new Date().toISOString(),

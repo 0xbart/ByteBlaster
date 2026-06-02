@@ -34,6 +34,15 @@
       >
         <i class="fas fa-trash" aria-hidden="true" />
       </button>
+      <button
+        class="button is-small action-btn"
+        :class="sound.is_favorite ? 'is-warning' : 'is-light'"
+        :title="sound.is_favorite ? 'Remove from favorites' : 'Add to favorites'"
+        tabindex="-1"
+        @click.stop="onToggleFavorite($event)"
+      >
+        <i class="fas fa-star" aria-hidden="true" />
+      </button>
     </div>
 
     <EditSoundDialog v-if="editOpen" :sound="sound" @close="editOpen = false" />
@@ -79,6 +88,12 @@ function onPlay(): void {
 
 function confirmDelete(): void {
   void sounds.remove(props.sound.id);
+}
+
+function onToggleFavorite(ev: MouseEvent): void {
+  (ev.currentTarget as HTMLElement | null)?.blur();
+  if (props.sound.is_favorite) void sounds.unfavorite(props.sound.id);
+  else void sounds.favorite(props.sound.id);
 }
 </script>
 
