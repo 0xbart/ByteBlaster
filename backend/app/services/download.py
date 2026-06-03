@@ -7,7 +7,7 @@ import httpx
 from fastapi import HTTPException, status
 
 from ..config import Settings
-from .storage import ALLOWED_MIME, CHUNK, StoredFile
+from .storage import ALLOWED_MIME, CHUNK, StoredFile, probe_duration_ms
 
 
 def _validate_url(url: str) -> None:
@@ -90,7 +90,7 @@ async def download_url(url: str, settings: Settings) -> StoredFile:
             detail=f"Could not fetch URL: {exc.__class__.__name__}.",
         ) from None
 
-    return StoredFile(path=final, mime=mime, size=size)
+    return StoredFile(path=final, mime=mime, size=size, duration_ms=probe_duration_ms(final))
 
 
 def derive_filename_from_url(url: str) -> str | None:

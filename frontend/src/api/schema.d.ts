@@ -554,6 +554,8 @@ export interface components {
              * @default false
              */
             is_favorite: boolean;
+            /** Duration Ms */
+            duration_ms?: number | null;
         };
         /** SoundPatchIn */
         SoundPatchIn: {

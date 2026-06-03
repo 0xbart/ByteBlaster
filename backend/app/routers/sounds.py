@@ -31,6 +31,7 @@ def _to_out(sound: Sound, favorite_ids: set[int] | frozenset[int] = frozenset())
         created_at=sound.created_at,
         url=f"/api/sounds/{sound.id}/file",
         is_favorite=sound.id in favorite_ids,
+        duration_ms=sound.duration_ms,
     )
 
 
@@ -121,6 +122,7 @@ async def upload_sound(
         size_bytes=stored.size,
         uploaded_by_user_id=user.id,
         category_id=category_id,
+        duration_ms=stored.duration_ms,
     )
     sound.tags = tag_objs
     session.add(sound)

@@ -74,6 +74,7 @@ class SoundOut(BaseModel):
     created_at: datetime
     url: str
     is_favorite: bool = False
+    duration_ms: int | None = None
 
 
 class SoundPatchIn(BaseModel):

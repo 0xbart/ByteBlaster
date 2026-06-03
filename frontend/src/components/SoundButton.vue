@@ -1,5 +1,8 @@
 <template>
   <div class="sound-button">
+    <span v-if="sound.duration_ms" class="duration-badge">
+      {{ formatDuration(sound.duration_ms) }}
+    </span>
     <button
       class="button is-medium is-fullwidth"
       :class="{
@@ -99,11 +102,43 @@ function onToggleFavorite(ev: MouseEvent): void {
   if (props.sound.is_favorite) void sounds.unfavorite(props.sound.id);
   else void sounds.favorite(props.sound.id);
 }
+
+function formatDuration(ms: number): string {
+  const s = Math.round(ms / 1000);
+  if (s < 60) return `${s}s`;
+  const m = Math.floor(s / 60);
+  const rem = s % 60;
+  return rem === 0 ? `${m}m` : `${m}m${rem}s`;
+}
 </script>
 
 <style scoped>
 .sound-button {
   position: relative;
+}
+.duration-badge {
+  position: absolute;
+  top: -6px;
+  left: -6px;
+  z-index: 2;
+  min-width: 28px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: var(--bulma-scheme-main-ter, rgba(0, 0, 0, 0.55));
+  color: var(--bulma-text, #fff);
+  font-size: 0.7rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.15s ease-in-out;
+}
+.sound-button:hover .duration-badge,
+.sound-button:focus-within .duration-badge {
+  opacity: 0.55;
 }
 .sound-button :deep(.button.is-fullwidth) {
   min-height: 2.5em;

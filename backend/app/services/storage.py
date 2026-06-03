@@ -24,6 +24,20 @@ class StoredFile:
     path: Path
     mime: str
     size: int
+    duration_ms: int | None = None
+
+
+def probe_duration_ms(path: Path) -> int | None:
+    try:
+        from mutagen import File as MutagenFile
+        m = MutagenFile(str(path))
+        if m is None or m.info is None:
+            return None
+        secs = float(getattr(m.info, "length", 0.0) or 0.0)
+        ms = int(round(secs * 1000))
+        return ms if ms > 0 else None
+    except Exception:
+        return None
 
 
 async def save_upload(upload: UploadFile, settings: Settings) -> StoredFile:
@@ -65,7 +79,7 @@ async def save_upload(upload: UploadFile, settings: Settings) -> StoredFile:
         tmp.unlink(missing_ok=True)
         raise
 
-    return StoredFile(path=final, mime=mime, size=size)
+    return StoredFile(path=final, mime=mime, size=size, duration_ms=probe_duration_ms(final))
 
 
 def resolve_path(file_path: str, settings: Settings) -> Path:
