@@ -22,10 +22,28 @@
             <em class="play-name has-text-grey">came online</em>
             <span class="play-time has-text-grey is-size-7">{{ relativeTime(it.at) }}</span>
           </template>
-          <template v-else>
+          <template v-else-if="it.kind === 'leave'">
             <b-icon icon="link-slash" pack="fas" size="is-small" class="play-icon" />
             <strong class="play-user">{{ it.username }}</strong>
             <em class="play-name has-text-grey">went offline</em>
+            <span class="play-time has-text-grey is-size-7">{{ relativeTime(it.at) }}</span>
+          </template>
+          <template v-else-if="it.kind === 'sound_added'">
+            <b-icon icon="circle-plus" pack="fas" size="is-small" class="play-icon" />
+            <strong class="play-user">{{ it.username }}</strong>
+            <em class="play-name">added {{ it.soundName }}</em>
+            <span class="play-time has-text-grey is-size-7">{{ relativeTime(it.at) }}</span>
+          </template>
+          <template v-else-if="it.kind === 'sound_updated'">
+            <b-icon icon="pencil" pack="fas" size="is-small" class="play-icon" />
+            <strong class="play-user">{{ it.username }}</strong>
+            <em class="play-name">edited {{ it.soundName }}</em>
+            <span class="play-time has-text-grey is-size-7">{{ relativeTime(it.at) }}</span>
+          </template>
+          <template v-else>
+            <b-icon icon="trash" pack="fas" size="is-small" class="play-icon" />
+            <strong class="play-user">{{ it.username }}</strong>
+            <em class="play-name">deleted {{ it.soundName }}</em>
             <span class="play-time has-text-grey is-size-7">{{ relativeTime(it.at) }}</span>
           </template>
         </li>

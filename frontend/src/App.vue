@@ -93,7 +93,17 @@
 
     <main class="section">
       <div class="container">
-        <div v-if="!loaded" class="has-text-centered">
+        <div v-if="serverDown" class="server-down has-text-centered py-6">
+          <b-icon icon="server" pack="fas" size="is-large" class="has-text-warning" />
+          <h1 class="title is-3 mt-3">Backend not reachable</h1>
+          <p class="has-text-grey">
+            Cannot reach the ByteBlaster server. Check the connection or try again.
+          </p>
+          <b-button type="is-primary" icon-left="refresh" class="mt-4" @click="retryConnect">
+            Retry
+          </b-button>
+        </div>
+        <div v-else-if="!loaded" class="has-text-centered">
           <b-loading :is-full-page="false" :model-value="true" />
         </div>
         <ClaimUsernameDialog v-else-if="needsClaim" />
@@ -151,7 +161,11 @@ const presence = usePresenceStore();
 const theme = useThemeStore();
 const audio = useAudioStore();
 const soundsStore = useSoundsStore();
-const { me, loaded, needsClaim, isAdmin, isSuperadmin } = storeToRefs(userStore);
+const { me, loaded, needsClaim, isAdmin, isSuperadmin, serverDown } = storeToRefs(userStore);
+
+function retryConnect(): void {
+  void userStore.fetchMe();
+}
 
 const view = ref<"board" | "stats" | "admin" | "explore">("board");
 const presenceOpen = ref(false);

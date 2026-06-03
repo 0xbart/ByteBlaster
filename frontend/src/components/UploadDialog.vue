@@ -89,6 +89,7 @@ import { computed, ref, watch } from "vue";
 import { useSoundsStore } from "@/stores/sounds";
 import { useCategoriesStore } from "@/stores/categories";
 import { useTagsStore } from "@/stores/tags";
+import { celebrate } from "@/composables/useConfetti";
 
 const props = defineProps<{
   initialUrl?: string;
@@ -158,6 +159,7 @@ async function submit(): Promise<void> {
       }
       if (allOk) {
         tagsStore.upsertNames(tags.value);
+        celebrate();
         emit("close");
       }
       return;
@@ -167,6 +169,7 @@ async function submit(): Promise<void> {
     const ok = await sounds.upload(source, displayName.value.trim(), categoryId.value, tags.value);
     if (ok) {
       tagsStore.upsertNames(tags.value);
+      celebrate();
       emit("close");
     }
   } finally {

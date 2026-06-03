@@ -11,9 +11,9 @@ import type { PlayOut, SoundOut } from "@/api";
 
 type WsEvent =
   | { type: "play"; sound_id: number; sound_url: string; display_name: string; by: string; at: string }
-  | { type: "sound_added"; sound: SoundOut }
-  | { type: "sound_updated"; sound: SoundOut }
-  | { type: "sound_removed"; sound_id: number }
+  | { type: "sound_added"; sound: SoundOut; by: string }
+  | { type: "sound_updated"; sound: SoundOut; by: string }
+  | { type: "sound_removed"; sound_id: number; display_name: string; by: string }
   | { type: "tag_removed"; name: string }
   | { type: "tag_renamed"; id: number; old_name: string; new_name: string }
   | { type: "category_renamed"; id: number; new_name: string }
@@ -60,12 +60,17 @@ export function useWebSocket() {
         stats.bump(ev.sound_id, ev.display_name, ev.by);
         break;
       case "sound_added":
+        sounds.upsert(ev.sound);
+        history.prependSoundAdded(ev.by, ev.sound.display_name);
+        break;
       case "sound_updated":
         sounds.upsert(ev.sound);
+        history.prependSoundUpdated(ev.by, ev.sound.display_name);
         break;
       case "sound_removed":
         sounds.removeLocal(ev.sound_id);
         stats.removeSound(ev.sound_id);
+        history.prependSoundRemoved(ev.by, ev.display_name);
         break;
       case "tag_removed":
         sounds.stripTag(ev.name);

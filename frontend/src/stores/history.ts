@@ -9,7 +9,10 @@ const MAX_ITEMS = 50;
 export type FeedItem =
   | { kind: "play"; key: string; soundId: number; username: string; soundName: string; at: string }
   | { kind: "join"; key: string; username: string; at: string }
-  | { kind: "leave"; key: string; username: string; at: string };
+  | { kind: "leave"; key: string; username: string; at: string }
+  | { kind: "sound_added"; key: string; username: string; soundName: string; at: string }
+  | { kind: "sound_updated"; key: string; username: string; soundName: string; at: string }
+  | { kind: "sound_removed"; key: string; username: string; soundName: string; at: string };
 
 export const useHistoryStore = defineStore("history", () => {
   const items = ref<FeedItem[]>([]);
@@ -68,5 +71,41 @@ export const useHistoryStore = defineStore("history", () => {
     ].slice(0, MAX_ITEMS);
   }
 
-  return { items, refresh, prependPlay, prependJoin, prependLeave };
+  function prependSoundEvent(
+    kind: "sound_added" | "sound_updated" | "sound_removed",
+    username: string,
+    soundName: string,
+  ): void {
+    items.value = [
+      {
+        kind,
+        key: `${kind}-${username}-${soundName}-${Date.now()}`,
+        username,
+        soundName,
+        at: new Date().toISOString(),
+      } as FeedItem,
+      ...items.value,
+    ].slice(0, MAX_ITEMS);
+  }
+
+  function prependSoundAdded(username: string, soundName: string): void {
+    prependSoundEvent("sound_added", username, soundName);
+  }
+  function prependSoundUpdated(username: string, soundName: string): void {
+    prependSoundEvent("sound_updated", username, soundName);
+  }
+  function prependSoundRemoved(username: string, soundName: string): void {
+    prependSoundEvent("sound_removed", username, soundName);
+  }
+
+  return {
+    items,
+    refresh,
+    prependPlay,
+    prependJoin,
+    prependLeave,
+    prependSoundAdded,
+    prependSoundUpdated,
+    prependSoundRemoved,
+  };
 });

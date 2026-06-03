@@ -129,7 +129,7 @@ async def upload_sound(
     assert full is not None  # just inserted
 
     out = _to_out(full)
-    await manager.broadcast(WsSoundAddedEvent(sound=out))
+    await manager.broadcast(WsSoundAddedEvent(sound=out, by=user.username))
     return out
 
 
@@ -137,7 +137,7 @@ async def upload_sound(
 async def patch_sound(
     sound_id: int,
     body: SoundPatchIn,
-    _: AdminUser,
+    user: AdminUser,
     session: DbSession,
 ) -> SoundOut:
     sound = await _load_full(session, sound_id)
@@ -164,7 +164,7 @@ async def patch_sound(
     # reload relationships so the broadcast reflects the new state.
     await session.refresh(sound, ["uploader", "category", "tags"])
     out = _to_out(sound)
-    await manager.broadcast(WsSoundUpdatedEvent(sound=out))
+    await manager.broadcast(WsSoundUpdatedEvent(sound=out, by=user.username))
     return out
 
 
@@ -178,9 +178,16 @@ async def delete_sound(sound_id: int, user: CurrentUser, session: DbSession) -> 
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Only the uploader or an admin can delete this sound.",
         )
+    display_name = sound.display_name
     await session.delete(sound)
     await session.commit()
-    await manager.broadcast(WsSoundRemovedEvent(sound_id=sound_id))
+    await manager.broadcast(
+        WsSoundRemovedEvent(
+            sound_id=sound_id,
+            display_name=display_name,
+            by=user.username,
+        )
+    )
 
 
 @router.post("/{sound_id}/favorite", response_model=SoundOut)

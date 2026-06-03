@@ -150,16 +150,20 @@ class WsPlayEvent(BaseModel):
 class WsSoundAddedEvent(BaseModel):
     type: Literal["sound_added"] = "sound_added"
     sound: SoundOut
+    by: str
 
 
 class WsSoundUpdatedEvent(BaseModel):
     type: Literal["sound_updated"] = "sound_updated"
     sound: SoundOut
+    by: str
 
 
 class WsSoundRemovedEvent(BaseModel):
     type: Literal["sound_removed"] = "sound_removed"
     sound_id: int
+    display_name: str
+    by: str
 
 
 class WsTagRemovedEvent(BaseModel):
