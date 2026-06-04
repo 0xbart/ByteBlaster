@@ -1,5 +1,7 @@
 <template>
   <div class="explore-view">
+    <b-tabs v-model="activeTab" type="is-boxed">
+    <b-tab-item label="Myinstants" value="myinstants" icon="magnify" pack="fas">
     <div class="explore-actions mb-3">
       <b-input
         ref="searchInput"
@@ -72,12 +74,18 @@
       :initial-name="addDialog.title"
       @close="addDialog = null"
     />
+    </b-tab-item>
+    <b-tab-item label="YouTube" value="youtube" icon="video" pack="fas">
+      <ExploreYoutube />
+    </b-tab-item>
+    </b-tabs>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref } from "vue";
 import UploadDialog from "./UploadDialog.vue";
+import ExploreYoutube from "./ExploreYoutube.vue";
 import { useExploreStore } from "@/stores/explore";
 import { useAudioPlayer } from "@/composables/useAudioPlayer";
 import type { ExploreResult } from "@/api";
@@ -86,6 +94,7 @@ const explore = useExploreStore();
 const audio = useAudioPlayer();
 const q = ref(explore.query);
 const addDialog = ref<ExploreResult | null>(null);
+const activeTab = ref<"myinstants" | "youtube">("myinstants");
 
 function onSearch(): void {
   const v = q.value.trim();
@@ -94,7 +103,7 @@ function onSearch(): void {
     explore.reset();
     return;
   }
-  void explore.search(v, 1);
+  void explore.search(v);
 }
 function onLocalPlay(url: string): void {
   audio.play(url);

@@ -6,6 +6,10 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /app
 
+# ffmpeg is required by yt-dlp's audio extractor (Explore → YouTube tab).
+RUN apt-get update && apt-get install -y --no-install-recommends ffmpeg \
+    && rm -rf /var/lib/apt/lists/*
+
 COPY pyproject.toml ./
 RUN pip install --upgrade pip && pip install .
 

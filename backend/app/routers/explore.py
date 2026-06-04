@@ -1,15 +1,19 @@
 from __future__ import annotations
 
+import asyncio
 import re
+import secrets
 import time
-from typing import Annotated
+from pathlib import Path
+from typing import Annotated, Any
 
 import httpx
 from bs4 import BeautifulSoup
 from fastapi import APIRouter, HTTPException, Query, status
+from fastapi.responses import FileResponse
 
-from ..deps import CurrentUser
-from ..schemas import ExploreResult, ExploreSearchOut
+from ..deps import CurrentUser, SettingsDep
+from ..schemas import ExploreResult, ExploreSearchOut, YoutubeFetchIn, YoutubeFetchOut
 
 router = APIRouter(prefix="/explore", tags=["explore"])
 
@@ -147,3 +151,170 @@ async def search_explore(
     out = _parse_results(resp.text, q_clean, page)
     _cache_set(key, out)
     return out
+
+
+# ---------------------------------------------------------------------------
+# YouTube → mp3 via yt-dlp (max 20 s, served from temp preview directory)
+# ---------------------------------------------------------------------------
+
+MAX_YT_DURATION_S = 20
+_PREVIEW_SUBDIR = "_yt_previews"
+_PREVIEW_TTL_SECONDS = 3600.0
+_TOKEN_RE = re.compile(r"^[A-Za-z0-9_\-]{8,40}\.mp3$")
+
+
+def _yt_probe_sync(url: str) -> dict[str, Any]:
+    from yt_dlp import YoutubeDL
+
+    opts = {
+        "quiet": True,
+        "skip_download": True,
+        "no_warnings": True,
+        "noplaylist": True,
+        "extract_flat": False,
+        "socket_timeout": 10,
+    }
+    with YoutubeDL(opts) as ydl:
+        info = ydl.extract_info(url, download=False) or {}
+    # When yt-dlp falls back to a playlist (despite noplaylist) it returns
+    # `_type=playlist` with entries; pick the first entry's metadata.
+    if info.get("_type") == "playlist":
+        entries = info.get("entries") or []
+        if entries:
+            return entries[0] or {}
+        return {}
+    return info
+
+
+def _yt_download_sync(url: str, out_template: str) -> str:
+    from yt_dlp import YoutubeDL
+
+    opts = {
+        "format": "bestaudio/best",
+        "outtmpl": out_template,
+        "postprocessors": [
+            {"key": "FFmpegExtractAudio", "preferredcodec": "mp3", "preferredquality": "192"}
+        ],
+        "quiet": True,
+        "noprogress": True,
+        "no_warnings": True,
+        "noplaylist": True,
+        "socket_timeout": 15,
+    }
+    with YoutubeDL(opts) as ydl:
+        info = ydl.extract_info(url, download=True)
+    # yt-dlp returns the post-postprocessing file via `requested_downloads`
+    # (preferred) or `filepath`; fall back to swapping the extension.
+    if info:
+        downloads = info.get("requested_downloads") or []
+        if downloads:
+            filepath = downloads[0].get("filepath")
+            if filepath:
+                return filepath
+        filepath = info.get("filepath")
+        if filepath:
+            return filepath
+    return out_template.replace("%(ext)s", "mp3")
+
+
+def _cleanup_old_previews(prev_dir: Path) -> None:
+    cutoff = time.time() - _PREVIEW_TTL_SECONDS
+    for f in prev_dir.iterdir():
+        try:
+            if f.is_file() and f.stat().st_mtime < cutoff:
+                f.unlink(missing_ok=True)
+        except OSError:
+            continue
+
+
+@router.post("/youtube/fetch", response_model=YoutubeFetchOut)
+async def youtube_fetch(
+    body: YoutubeFetchIn,
+    _: CurrentUser,
+    settings: SettingsDep,
+) -> YoutubeFetchOut:
+    url = body.url.strip()
+    if not url:
+        raise HTTPException(status_code=422, detail="URL must not be empty.")
+
+    try:
+        info = await asyncio.wait_for(asyncio.to_thread(_yt_probe_sync, url), timeout=20.0)
+    except asyncio.TimeoutError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_504_GATEWAY_TIMEOUT,
+            detail="YouTube probe timed out.",
+        ) from exc
+    except Exception as exc:  # noqa: BLE001 — yt-dlp raises a hierarchy of errors
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail=f"YouTube probe failed: {exc.__class__.__name__}",
+        ) from exc
+
+    duration_s = float(info.get("duration") or 0)
+    if duration_s <= 0:
+        raise HTTPException(status_code=422, detail="Could not determine duration.")
+    if duration_s > MAX_YT_DURATION_S:
+        raise HTTPException(
+            status_code=422,
+            detail=f"Audio is {duration_s:.1f}s; max is {MAX_YT_DURATION_S}s.",
+        )
+
+    title = (info.get("title") or "YouTube audio").strip() or "YouTube audio"
+
+    prev_dir = settings.storage_dir / _PREVIEW_SUBDIR
+    prev_dir.mkdir(parents=True, exist_ok=True)
+    _cleanup_old_previews(prev_dir)
+
+    token = secrets.token_urlsafe(12)
+    out_path = prev_dir / f"{token}.mp3"
+    out_template = str(prev_dir / f"{token}.%(ext)s")
+
+    try:
+        produced = await asyncio.wait_for(
+            asyncio.to_thread(_yt_download_sync, url, out_template),
+            timeout=60.0,
+        )
+    except asyncio.TimeoutError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_504_GATEWAY_TIMEOUT,
+            detail="YouTube download timed out.",
+        ) from exc
+    except Exception as exc:  # noqa: BLE001
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail=f"YouTube download failed: {exc.__class__.__name__}",
+        ) from exc
+
+    produced_path = Path(produced)
+    if produced_path != out_path:
+        if produced_path.is_file():
+            produced_path.rename(out_path)
+
+    if not out_path.is_file():
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="yt-dlp did not produce an mp3 file.",
+        )
+
+    if out_path.stat().st_size > settings.max_upload_bytes:
+        out_path.unlink(missing_ok=True)
+        raise HTTPException(
+            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            detail="Extracted audio exceeds the upload size limit.",
+        )
+
+    return YoutubeFetchOut(
+        title=title,
+        duration_ms=int(round(duration_s * 1000)),
+        preview_url=f"/api/explore/youtube/preview/{token}.mp3",
+    )
+
+
+@router.get("/youtube/preview/{token}")
+async def youtube_preview(token: str, settings: SettingsDep) -> FileResponse:
+    if not _TOKEN_RE.fullmatch(token):
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+    path = settings.storage_dir / _PREVIEW_SUBDIR / token
+    if not path.is_file():
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+    return FileResponse(path, media_type="audio/mpeg", filename=token)

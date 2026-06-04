@@ -2,7 +2,7 @@ import { defineStore } from "pinia";
 import { ref } from "vue";
 
 import { api } from "@/api";
-import type { ExploreResult } from "@/api";
+import type { ExploreResult, YoutubeFetchOut } from "@/api";
 
 export const useExploreStore = defineStore("explore", () => {
   const query = ref("");
@@ -59,5 +59,64 @@ export const useExploreStore = defineStore("explore", () => {
     await _fetch(query.value, page.value + 1, true);
   }
 
-  return { query, page, results, hasMore, loading, error, search, loadMore, reset };
+  // --- YouTube tab ---
+  const youtubeUrl = ref("");
+  const youtubeResult = ref<YoutubeFetchOut | null>(null);
+  const youtubeLoading = ref(false);
+  const youtubeError = ref<string | null>(null);
+
+  async function fetchYoutube(url: string): Promise<void> {
+    youtubeUrl.value = url;
+    youtubeResult.value = null;
+    youtubeError.value = null;
+    youtubeLoading.value = true;
+    const { data, error, response } = await api.POST("/api/explore/youtube/fetch", {
+      body: { url },
+    });
+    if (data) {
+      youtubeResult.value = data;
+    } else {
+      let msg: string | null = null;
+      const detail = (error as { detail?: unknown } | undefined)?.detail;
+      if (typeof detail === "string") {
+        msg = detail;
+      } else if (Array.isArray(detail) && detail.length > 0) {
+        const first = detail[0] as { msg?: string };
+        msg = first.msg ?? null;
+      }
+      if (!msg) {
+        if (response.status === 502 || response.status === 504) {
+          msg = "YouTube is not reachable right now.";
+        } else {
+          msg = `Fetch failed (HTTP ${response.status}).`;
+        }
+      }
+      youtubeError.value = msg;
+    }
+    youtubeLoading.value = false;
+  }
+
+  function resetYoutube(): void {
+    youtubeUrl.value = "";
+    youtubeResult.value = null;
+    youtubeError.value = null;
+  }
+
+  return {
+    query,
+    page,
+    results,
+    hasMore,
+    loading,
+    error,
+    search,
+    loadMore,
+    reset,
+    youtubeUrl,
+    youtubeResult,
+    youtubeLoading,
+    youtubeError,
+    fetchYoutube,
+    resetYoutube,
+  };
 });

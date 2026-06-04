@@ -385,6 +385,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/explore/youtube/fetch": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Youtube Fetch */
+        post: operations["youtube_fetch"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/explore/youtube/preview/{token}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Youtube Preview */
+        get: operations["youtube_preview"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/healthz": {
         parameters: {
             query?: never;
@@ -649,6 +683,20 @@ export interface components {
          * @enum {string}
          */
         Window: "day" | "week" | "month" | "all";
+        /** YoutubeFetchIn */
+        YoutubeFetchIn: {
+            /** Url */
+            url: string;
+        };
+        /** YoutubeFetchOut */
+        YoutubeFetchOut: {
+            /** Title */
+            title: string;
+            /** Duration Ms */
+            duration_ms: number;
+            /** Preview Url */
+            preview_url: string;
+        };
     };
     responses: never;
     parameters: never;
@@ -1483,6 +1531,70 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ExploreSearchOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    youtube_fetch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["YoutubeFetchIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["YoutubeFetchOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    youtube_preview: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
                 };
             };
             /** @description Validation Error */

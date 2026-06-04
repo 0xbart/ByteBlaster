@@ -16,6 +16,7 @@ dependencies = [
     "beautifulsoup4>=4.12",
     "lxml>=5.0",
     "mutagen>=1.47",
+    "yt-dlp>=2025.1.15",
 ]
 
 [project.optional-dependencies]

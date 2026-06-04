@@ -126,6 +126,16 @@ class ExploreSearchOut(BaseModel):
     has_more: bool
 
 
+class YoutubeFetchIn(BaseModel):
+    url: str = Field(min_length=4, max_length=512)
+
+
+class YoutubeFetchOut(BaseModel):
+    title: str
+    duration_ms: int
+    preview_url: str
+
+
 class PlayOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
