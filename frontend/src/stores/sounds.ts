@@ -117,8 +117,8 @@ export const useSoundsStore = defineStore("sounds", () => {
     const { response } = await api.POST("/api/sounds/{sound_id}/play", {
       params: { path: { sound_id: id } },
     });
-    if (response.status === 429) {
-      let msg = "Slow down — too many plays.";
+    if (response.status === 429 || response.status === 423) {
+      let msg = response.status === 423 ? "Sounds are globally muted." : "Slow down — too many plays.";
       try {
         const body = (await response.clone().json()) as { detail?: string };
         if (body.detail) msg = body.detail;

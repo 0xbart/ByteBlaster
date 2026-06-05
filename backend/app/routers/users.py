@@ -18,7 +18,7 @@ async def list_users(_: AdminUser, session: DbSession) -> list[User]:
 
 @router.patch("/{user_id}", response_model=UserOut)
 async def patch_user(
-    user_id: int, body: UserPatchIn, _: AdminUser, session: DbSession
+    user_id: int, body: UserPatchIn, caller: AdminUser, session: DbSession
 ) -> User:
     user = await session.get(User, user_id)
     if user is None:
@@ -28,7 +28,16 @@ async def patch_user(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="The superadmin cannot be modified.",
         )
-    user.is_admin = body.is_admin
+    changes = body.model_dump(exclude_unset=True)
+    if "is_mutemaster" in changes and not caller.is_superadmin:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only the superadmin can grant the mutemaster role.",
+        )
+    if "is_admin" in changes and changes["is_admin"] is not None:
+        user.is_admin = bool(changes["is_admin"])
+    if "is_mutemaster" in changes and changes["is_mutemaster"] is not None:
+        user.is_mutemaster = bool(changes["is_mutemaster"])
     await session.commit()
     await session.refresh(user)
     return user

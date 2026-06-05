@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, WebSocket, WebSocketDisconnect
@@ -40,11 +41,32 @@ async def ws_endpoint(
             is_superadmin=user.is_superadmin,
         ),
     )
+    # Send the current global-mute snapshot so a freshly opened tab
+    # learns about an active mute without waiting for the next toggle.
+    from ..services import global_mute as _gm
+    from ..schemas import WsGlobalMuteEvent
+    _state = _gm.state()
+    try:
+        await websocket.send_json(
+            WsGlobalMuteEvent(active=_state.active, by=_state.by, at=_state.at).model_dump(mode="json")
+        )
+    except Exception:  # noqa: BLE001
+        pass
     try:
         while True:
-            # We don't expect client messages, but keep the loop alive so disconnect is detected.
-            await websocket.receive_text()
+            raw = await websocket.receive_text()
+            try:
+                msg = json.loads(raw)
+            except (ValueError, TypeError):
+                continue
+            if isinstance(msg, dict) and msg.get("type") == "volume":
+                try:
+                    value = int(msg.get("value", 100))
+                except (TypeError, ValueError):
+                    continue
+                await manager.set_volume(user.id, value)
     except WebSocketDisconnect:
         pass
     finally:
         await manager.disconnect(websocket)
+        await manager.forget_user_volume_if_offline(user.id)

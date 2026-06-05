@@ -7,6 +7,7 @@ export interface PresenceUser {
   ip: string;
   is_admin?: boolean;
   is_superadmin?: boolean;
+  volume?: number;
 }
 
 export const usePresenceStore = defineStore("presence", () => {

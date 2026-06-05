@@ -49,10 +49,11 @@ function getElement(): HTMLAudioElement {
   return el;
 }
 
-function playOnElement(url: string): void {
+function playOnElement(url: string, volume: number): void {
   const el = getElement();
   el.src = url;
   el.currentTime = 0;
+  el.volume = Math.max(0, Math.min(1, volume));
   void el
     .play()
     .then(() => {
@@ -104,7 +105,7 @@ export function useAudioPlayer() {
       if (queue.length > QUEUE_MAX) queue.shift();
       return;
     }
-    playOnElement(url);
+    playOnElement(url, audio.volume / 100);
   }
 
   return { play, unlocked, playing, stopAll };

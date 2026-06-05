@@ -58,6 +58,13 @@ async def play_sound(
     session: DbSession,
     settings: Settings = Depends(get_settings),
 ) -> PlayOut:
+    from ..services import global_mute
+
+    if global_mute.state().active:
+        raise HTTPException(
+            status_code=status.HTTP_423_LOCKED,
+            detail="Sounds are globally muted.",
+        )
     _check_rate_limit(user, settings)
     sound = await session.get(Sound, sound_id)
     if sound is None:

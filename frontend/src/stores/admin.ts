@@ -32,6 +32,20 @@ export const useAdminStore = defineStore("admin", () => {
     return false;
   }
 
+  async function setMutemaster(id: number, value: boolean): Promise<boolean> {
+    const { data, response } = await api.PATCH("/api/users/{user_id}", {
+      params: { path: { user_id: id } },
+      body: { is_mutemaster: value },
+    });
+    if (data) {
+      const idx = users.value.findIndex((u) => u.id === id);
+      if (idx >= 0) users.value[idx] = data;
+      return true;
+    }
+    error.value = response.status === 403 ? "Only the superadmin can grant mutemaster." : "Failed.";
+    return false;
+  }
+
   async function removeUser(id: number): Promise<boolean> {
     const { response } = await api.DELETE("/api/users/{user_id}", {
       params: { path: { user_id: id } },
@@ -44,5 +58,5 @@ export const useAdminStore = defineStore("admin", () => {
     return false;
   }
 
-  return { users, error, refreshUsers, setAdmin, removeUser };
+  return { users, error, refreshUsers, setAdmin, setMutemaster, removeUser };
 });

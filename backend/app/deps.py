@@ -83,8 +83,17 @@ async def require_admin(
     return user
 
 
+async def require_mutemaster(
+    user: Annotated[User, Depends(require_user)],
+) -> User:
+    if not (user.is_mutemaster or user.is_superadmin):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Mutemaster only.")
+    return user
+
+
 CurrentUser = Annotated[User, Depends(require_user)]
 AdminUser = Annotated[User, Depends(require_admin)]
+MutemasterUser = Annotated[User, Depends(require_mutemaster)]
 OptionalUser = Annotated[User | None, Depends(get_current_user_optional)]
 DbSession = Annotated[AsyncSession, Depends(get_session)]
 SettingsDep = Annotated[Settings, Depends(get_settings)]

@@ -1,10 +1,12 @@
-import { onBeforeUnmount, onMounted, ref } from "vue";
+import { onBeforeUnmount, onMounted, ref, watch } from "vue";
 
 import { useSoundsStore } from "@/stores/sounds";
 import { useHistoryStore } from "@/stores/history";
 import { useTagsStore } from "@/stores/tags";
 import { useCategoriesStore } from "@/stores/categories";
 import { useStatsStore } from "@/stores/stats";
+import { useAudioStore } from "@/stores/audio";
+import { useGlobalMuteStore } from "@/stores/globalMute";
 import { usePresenceStore, type PresenceUser } from "@/stores/presence";
 import { useAudioPlayer } from "./useAudioPlayer";
 import type { PlayOut, SoundOut } from "@/api";
@@ -17,7 +19,8 @@ type WsEvent =
   | { type: "tag_removed"; name: string }
   | { type: "tag_renamed"; id: number; old_name: string; new_name: string }
   | { type: "category_renamed"; id: number; new_name: string }
-  | { type: "presence"; users: PresenceUser[] };
+  | { type: "presence"; users: PresenceUser[] }
+  | { type: "global_mute"; active: boolean; by: string | null; at: string | null };
 
 function wsUrl(): string {
   const proto = window.location.protocol === "https:" ? "wss:" : "ws:";
@@ -30,6 +33,8 @@ export function useWebSocket() {
   const tags = useTagsStore();
   const categories = useCategoriesStore();
   const stats = useStatsStore();
+  const audioStore = useAudioStore();
+  const globalMute = useGlobalMuteStore();
   const presence = usePresenceStore();
   const audio = useAudioPlayer();
 
@@ -84,6 +89,10 @@ export function useWebSocket() {
         sounds.renameCategoryLocal(ev.id, ev.new_name);
         categories.applyRename(ev.id, ev.new_name);
         break;
+      case "global_mute":
+        globalMute.applyEvent(ev);
+        if (ev.active) audio.stopAll();
+        break;
       case "presence": {
         // Detect newly-joined users by diffing against the previous list.
         // Skip the very first presence snapshot (initial connect) to avoid
@@ -120,6 +129,7 @@ export function useWebSocket() {
     socket = new WebSocket(wsUrl());
     socket.onopen = () => {
       connected.value = true;
+      sendVolume();
     };
     socket.onmessage = (msg) => {
       try {
@@ -143,10 +153,34 @@ export function useWebSocket() {
     };
   }
 
+  function sendVolume(): void {
+    if (socket?.readyState !== WebSocket.OPEN) return;
+    try {
+      socket.send(JSON.stringify({ type: "volume", value: audioStore.volume }));
+    } catch {
+      // ignore
+    }
+  }
+
+  let lastSent = audioStore.volume;
+  let volumeDebounce: number | null = null;
+  watch(
+    () => audioStore.volume,
+    (v) => {
+      if (v === lastSent) return;
+      if (volumeDebounce !== null) window.clearTimeout(volumeDebounce);
+      volumeDebounce = window.setTimeout(() => {
+        lastSent = v;
+        sendVolume();
+      }, 150);
+    },
+  );
+
   onMounted(connect);
   onBeforeUnmount(() => {
     stopped = true;
     if (reconnectTimer !== null) window.clearTimeout(reconnectTimer);
+    if (volumeDebounce !== null) window.clearTimeout(volumeDebounce);
     socket?.close();
   });
 

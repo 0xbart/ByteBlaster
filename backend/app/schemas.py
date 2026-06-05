@@ -14,6 +14,7 @@ class UserOut(BaseModel):
     ip: str
     is_admin: bool
     is_superadmin: bool
+    is_mutemaster: bool = False
     created_at: datetime
 
     @field_validator("ip", mode="before")
@@ -34,7 +35,8 @@ class ClaimIn(BaseModel):
 
 
 class UserPatchIn(BaseModel):
-    is_admin: bool
+    is_admin: bool | None = None
+    is_mutemaster: bool | None = None
 
 
 class CategoryOut(BaseModel):
@@ -201,6 +203,7 @@ class PresenceUser(BaseModel):
     ip: str
     is_admin: bool = False
     is_superadmin: bool = False
+    volume: int = 100
 
     @field_validator("ip", mode="before")
     @classmethod
@@ -211,3 +214,20 @@ class PresenceUser(BaseModel):
 class WsPresenceEvent(BaseModel):
     type: Literal["presence"] = "presence"
     users: list[PresenceUser]
+
+
+class GlobalMuteState(BaseModel):
+    active: bool
+    by: str | None = None
+    at: datetime | None = None
+
+
+class GlobalMuteSetIn(BaseModel):
+    active: bool
+
+
+class WsGlobalMuteEvent(BaseModel):
+    type: Literal["global_mute"] = "global_mute"
+    active: bool
+    by: str | None = None
+    at: datetime | None = None

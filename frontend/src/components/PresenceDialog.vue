@@ -17,6 +17,7 @@
             <tr>
               <th>Name</th>
               <th>Role</th>
+              <th>Volume</th>
               <th>IP</th>
             </tr>
           </thead>
@@ -30,6 +31,17 @@
                 <span v-if="u.is_superadmin" class="tag is-warning is-light">superadmin</span>
                 <span v-else-if="u.is_admin" class="tag is-success">admin</span>
                 <span v-else class="tag">user</span>
+              </td>
+              <td>
+                <span class="is-flex is-align-items-center">
+                  <b-icon
+                    :icon="volumeIcon(u.volume ?? 100)"
+                    pack="fas"
+                    size="is-small"
+                    class="mr-2"
+                  />
+                  <span>{{ u.volume ?? 100 }}%</span>
+                </span>
               </td>
               <td><code>{{ u.ip }}</code></td>
             </tr>
@@ -55,4 +67,11 @@ const emit = defineEmits<(e: "close") => void>();
 const presence = usePresenceStore();
 const userStore = useUserStore();
 const { me } = storeToRefs(userStore);
+
+function volumeIcon(v: number): string {
+  if (v === 0) return "volume-xmark";
+  if (v <= 33) return "volume-low";
+  if (v <= 66) return "volume";
+  return "volume-high";
+}
 </script>

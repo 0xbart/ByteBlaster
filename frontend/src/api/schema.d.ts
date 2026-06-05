@@ -419,6 +419,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/global-mute": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Global Mute */
+        get: operations["get_global_mute"];
+        put?: never;
+        /** Set Global Mute */
+        post: operations["set_global_mute"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/healthz": {
         parameters: {
             query?: never;
@@ -509,6 +527,20 @@ export interface components {
             results: components["schemas"]["ExploreResult"][];
             /** Has More */
             has_more: boolean;
+        };
+        /** GlobalMuteSetIn */
+        GlobalMuteSetIn: {
+            /** Active */
+            active: boolean;
+        };
+        /** GlobalMuteState */
+        GlobalMuteState: {
+            /** Active */
+            active: boolean;
+            /** By */
+            by?: string | null;
+            /** At */
+            at?: string | null;
         };
         /** HTTPValidationError */
         HTTPValidationError: {
@@ -646,6 +678,11 @@ export interface components {
             /** Is Superadmin */
             is_superadmin: boolean;
             /**
+             * Is Mutemaster
+             * @default false
+             */
+            is_mutemaster: boolean;
+            /**
              * Created At
              * Format: date-time
              */
@@ -654,7 +691,9 @@ export interface components {
         /** UserPatchIn */
         UserPatchIn: {
             /** Is Admin */
-            is_admin: boolean;
+            is_admin?: boolean | null;
+            /** Is Mutemaster */
+            is_mutemaster?: boolean | null;
         };
         /** UserStatOut */
         UserStatOut: {
@@ -1595,6 +1634,59 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_global_mute: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GlobalMuteState"];
+                };
+            };
+        };
+    };
+    set_global_mute: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GlobalMuteSetIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GlobalMuteState"];
                 };
             };
             /** @description Validation Error */

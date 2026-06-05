@@ -17,6 +17,7 @@ export const useUserStore = defineStore("user", () => {
   const isReady = computed(() => loaded.value && me.value !== null);
   const isAdmin = computed(() => !!me.value?.is_admin);
   const isSuperadmin = computed(() => !!me.value?.is_superadmin);
+  const isMutemaster = computed(() => !!me.value?.is_mutemaster);
 
   async function fetchMe(): Promise<void> {
     try {
@@ -63,6 +64,7 @@ export const useUserStore = defineStore("user", () => {
     isReady,
     isAdmin,
     isSuperadmin,
+    isMutemaster,
     claimError,
     fetchMe,
     claim,

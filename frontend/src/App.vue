@@ -40,6 +40,15 @@
           <span v-if="isSuperadmin" class="tag is-warning is-light ml-2">superadmin</span>
           <span v-else-if="isAdmin" class="tag is-success ml-2">admin</span>
           <a
+            v-if="isMutemaster || isSuperadmin"
+            class="gavel-inline ml-3"
+            :class="globalMute.active ? 'has-text-danger' : 'has-text-white'"
+            :title="globalMute.active ? 'Lift global mute' : 'Mute everyone'"
+            @click="onGavelToggle"
+          >
+            <b-icon icon="gavel" pack="fas" size="is-small" />
+          </a>
+          <a
             class="tag ml-3 presence-tag"
             :class="wsConnected ? 'is-success' : 'is-warning'"
             :title="wsConnected ? 'Show who is connected' : 'Reconnecting…'"
@@ -48,17 +57,28 @@
             {{ wsConnected ? `live · ${presence.count}` : "offline" }}
           </a>
         </div>
-        <a
-          class="navbar-item theme-toggle"
-          :title="audio.muted ? 'Unmute sounds' : 'Mute sounds'"
-          @click="audio.toggle"
-        >
-          <b-icon
-            :icon="audio.muted ? 'volume-mute' : 'volume-high'"
-            pack="fas"
-            size="is-small"
-          />
-        </a>
+        <div class="navbar-item volume-control">
+          <a
+            class="volume-icon has-text-white"
+            :title="audio.muted ? 'Unmute (restore volume)' : 'Mute sounds'"
+            @click="audio.toggle"
+          >
+            <b-icon :icon="audio.volumeIcon" pack="fas" size="is-small" />
+          </a>
+          <div class="volume-popover">
+            <input
+              type="range"
+              min="0"
+              max="100"
+              step="1"
+              :value="audio.volume"
+              class="volume-slider"
+              :title="`Volume: ${audio.volume}%`"
+              @input="onVolumeInput"
+            />
+            <span class="volume-value">{{ audio.volume }}%</span>
+          </div>
+        </div>
         <a
           class="navbar-item theme-toggle"
           :title="theme.isDark ? 'Switch to light mode' : 'Switch to dark mode'"
@@ -89,6 +109,10 @@
     <div v-if="soundsStore.rateLimited" class="audio-rate-banner">
       <b-icon icon="bell-slash" pack="fas" size="is-small" class="mr-2" />
       {{ soundsStore.rateLimited }}
+    </div>
+    <div v-if="globalMute.active" class="audio-global-mute-banner">
+      <b-icon icon="gavel" pack="fas" size="is-small" class="mr-2" />
+      Sounds globally muted{{ globalMute.by ? ` by ${globalMute.by}` : "" }}
     </div>
 
     <main class="section">
@@ -146,6 +170,7 @@ import { useUserStore } from "./stores/user";
 import { useCategoriesStore } from "./stores/categories";
 import { useTagsStore } from "./stores/tags";
 import { useStatsStore } from "./stores/stats";
+import { useGlobalMuteStore } from "./stores/globalMute";
 import { usePresenceStore } from "./stores/presence";
 import { useThemeStore } from "./stores/theme";
 import { useAudioStore } from "./stores/audio";
@@ -157,11 +182,12 @@ const userStore = useUserStore();
 const categoriesStore = useCategoriesStore();
 const tagsStore = useTagsStore();
 const statsStore = useStatsStore();
+const globalMute = useGlobalMuteStore();
 const presence = usePresenceStore();
 const theme = useThemeStore();
 const audio = useAudioStore();
 const soundsStore = useSoundsStore();
-const { me, loaded, needsClaim, isAdmin, isSuperadmin, serverDown } = storeToRefs(userStore);
+const { me, loaded, needsClaim, isAdmin, isSuperadmin, isMutemaster, serverDown } = storeToRefs(userStore);
 
 function retryConnect(): void {
   void userStore.fetchMe();
@@ -180,6 +206,15 @@ watch(
   },
 );
 
+function onVolumeInput(ev: Event): void {
+  const target = ev.target as HTMLInputElement;
+  audio.setVolume(Number(target.value));
+}
+
+function onGavelToggle(): void {
+  void globalMute.setActive(!globalMute.active);
+}
+
 function onLiveClick(): void {
   if (wsConnected.value) presenceOpen.value = true;
 }
@@ -196,6 +231,7 @@ watch(
       void categoriesStore.refresh();
       void tagsStore.refresh();
       void statsStore.refresh();
+      void globalMute.refresh();
     }
   },
   { immediate: true },
@@ -220,8 +256,75 @@ watch(
   cursor: pointer;
   user-select: none;
 }
+.gavel-inline {
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+}
 .theme-toggle {
   cursor: pointer;
+}
+.app-shell :deep(.navbar) {
+  position: relative;
+  z-index: 1500;
+}
+.volume-control {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.volume-icon {
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  color: #fff;
+}
+.volume-popover {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translate(-50%, 4px);
+  background: hsl(0, 0%, 17%);
+  border: 1px solid hsl(0, 0%, 28%);
+  border-radius: 6px;
+  padding: 0.5rem 0;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.12s ease-in-out;
+  z-index: 1100;
+  white-space: nowrap;
+  min-width: 56px;
+}
+.volume-control:hover .volume-popover,
+.volume-control:focus-within .volume-popover {
+  opacity: 1;
+  pointer-events: auto;
+}
+.volume-slider {
+  appearance: slider-vertical;
+  -webkit-appearance: slider-vertical;
+  writing-mode: vertical-lr;
+  direction: rtl;
+  width: 32px;
+  height: 120px;
+  margin: 0;
+  padding: 0;
+  accent-color: hsl(204, 86%, 53%);
+  cursor: pointer;
+}
+.volume-value {
+  display: inline-block;
+  min-width: 40px;
+  text-align: center;
+  font-size: 0.75rem;
+  color: hsl(0, 0%, 85%);
+  font-weight: 600;
+  margin: 0;
 }
 .board-layout {
   display: grid;
@@ -276,5 +379,22 @@ watch(
   align-items: center;
   justify-content: center;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+.audio-global-mute-banner {
+  position: absolute;
+  top: 3.25rem;
+  left: 0;
+  right: 0;
+  z-index: 1100;
+  background: hsl(348, 75%, 38%);
+  color: #fff;
+  text-align: center;
+  padding: 0.4rem 1rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+  user-select: none;
 }
 </style>
