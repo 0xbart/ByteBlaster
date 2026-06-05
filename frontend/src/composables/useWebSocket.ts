@@ -7,6 +7,7 @@ import { useCategoriesStore } from "@/stores/categories";
 import { useStatsStore } from "@/stores/stats";
 import { useAudioStore } from "@/stores/audio";
 import { useGlobalMuteStore } from "@/stores/globalMute";
+import { celebrate } from "./useConfetti";
 import { usePresenceStore, type PresenceUser } from "@/stores/presence";
 import { useAudioPlayer } from "./useAudioPlayer";
 import type { PlayOut, SoundOut } from "@/api";
@@ -20,7 +21,7 @@ type WsEvent =
   | { type: "tag_renamed"; id: number; old_name: string; new_name: string }
   | { type: "category_renamed"; id: number; new_name: string }
   | { type: "presence"; users: PresenceUser[] }
-  | { type: "global_mute"; active: boolean; by: string | null; at: string | null };
+  | { type: "global_mute"; active: boolean; by: string | null; at: string | null; expires_at: string | null };
 
 function wsUrl(): string {
   const proto = window.location.protocol === "https:" ? "wss:" : "ws:";
@@ -89,10 +90,18 @@ export function useWebSocket() {
         sounds.renameCategoryLocal(ev.id, ev.new_name);
         categories.applyRename(ev.id, ev.new_name);
         break;
-      case "global_mute":
+      case "global_mute": {
+        const wasActive = globalMute.active;
         globalMute.applyEvent(ev);
-        if (ev.active) audio.stopAll();
+        if (ev.active) {
+          audio.stopAll();
+          if (!wasActive) history.prependMuteOn(ev.by ?? "someone");
+        } else if (wasActive) {
+          history.prependMuteOff(ev.by);
+          celebrate();
+        }
         break;
+      }
       case "presence": {
         // Detect newly-joined users by diffing against the previous list.
         // Skip the very first presence snapshot (initial connect) to avoid

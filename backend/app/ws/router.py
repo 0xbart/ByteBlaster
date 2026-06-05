@@ -48,7 +48,9 @@ async def ws_endpoint(
     _state = _gm.state()
     try:
         await websocket.send_json(
-            WsGlobalMuteEvent(active=_state.active, by=_state.by, at=_state.at).model_dump(mode="json")
+            WsGlobalMuteEvent(
+                active=_state.active, by=_state.by, at=_state.at, expires_at=_state.expires_at
+            ).model_dump(mode="json")
         )
     except Exception:  # noqa: BLE001
         pass

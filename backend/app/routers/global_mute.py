@@ -20,8 +20,8 @@ async def set_global_mute(
     body: GlobalMuteSetIn,
     user: MutemasterUser,
 ) -> GlobalMuteState:
-    new = await global_mute.set_state(body.active, user.username)
+    new = await global_mute.set_state(body.active, user.username, body.duration_minutes)
     await manager.broadcast(
-        WsGlobalMuteEvent(active=new.active, by=new.by, at=new.at)
+        WsGlobalMuteEvent(active=new.active, by=new.by, at=new.at, expires_at=new.expires_at)
     )
     return new

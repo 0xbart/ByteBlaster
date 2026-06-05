@@ -220,10 +220,13 @@ class GlobalMuteState(BaseModel):
     active: bool
     by: str | None = None
     at: datetime | None = None
+    expires_at: datetime | None = None
 
 
 class GlobalMuteSetIn(BaseModel):
     active: bool
+    # null = forever; otherwise minutes until auto-unmute.
+    duration_minutes: int | None = None
 
 
 class WsGlobalMuteEvent(BaseModel):
@@ -231,3 +234,4 @@ class WsGlobalMuteEvent(BaseModel):
     active: bool
     by: str | None = None
     at: datetime | None = None
+    expires_at: datetime | None = None

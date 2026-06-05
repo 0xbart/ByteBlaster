@@ -12,7 +12,9 @@ export type FeedItem =
   | { kind: "leave"; key: string; username: string; at: string }
   | { kind: "sound_added"; key: string; username: string; soundName: string; at: string }
   | { kind: "sound_updated"; key: string; username: string; soundName: string; at: string }
-  | { kind: "sound_removed"; key: string; username: string; soundName: string; at: string };
+  | { kind: "sound_removed"; key: string; username: string; soundName: string; at: string }
+  | { kind: "mute_on"; key: string; username: string; at: string }
+  | { kind: "mute_off"; key: string; username: string | null; at: string };
 
 export const useHistoryStore = defineStore("history", () => {
   const items = ref<FeedItem[]>([]);
@@ -88,6 +90,30 @@ export const useHistoryStore = defineStore("history", () => {
     ].slice(0, MAX_ITEMS);
   }
 
+  function prependMuteOn(username: string): void {
+    items.value = [
+      {
+        kind: "mute_on" as const,
+        key: `mute-on-${username}-${Date.now()}`,
+        username,
+        at: new Date().toISOString(),
+      },
+      ...items.value,
+    ].slice(0, MAX_ITEMS);
+  }
+
+  function prependMuteOff(username: string | null): void {
+    items.value = [
+      {
+        kind: "mute_off" as const,
+        key: `mute-off-${username ?? "auto"}-${Date.now()}`,
+        username,
+        at: new Date().toISOString(),
+      },
+      ...items.value,
+    ].slice(0, MAX_ITEMS);
+  }
+
   function prependSoundAdded(username: string, soundName: string): void {
     prependSoundEvent("sound_added", username, soundName);
   }
@@ -107,5 +133,7 @@ export const useHistoryStore = defineStore("history", () => {
     prependSoundAdded,
     prependSoundUpdated,
     prependSoundRemoved,
+    prependMuteOn,
+    prependMuteOff,
   };
 });

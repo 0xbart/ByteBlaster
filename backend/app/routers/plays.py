@@ -60,7 +60,7 @@ async def play_sound(
 ) -> PlayOut:
     from ..services import global_mute
 
-    if global_mute.state().active:
+    if global_mute.state().active and not user.is_superadmin:
         raise HTTPException(
             status_code=status.HTTP_423_LOCKED,
             detail="Sounds are globally muted.",

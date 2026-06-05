@@ -40,10 +40,22 @@
             <em class="play-name">edited {{ it.soundName }}</em>
             <span class="play-time has-text-grey is-size-7">{{ relativeTime(it.at) }}</span>
           </template>
-          <template v-else>
+          <template v-else-if="it.kind === 'sound_removed'">
             <b-icon icon="trash" pack="fas" size="is-small" class="play-icon" />
             <strong class="play-user">{{ it.username }}</strong>
             <em class="play-name">deleted {{ it.soundName }}</em>
+            <span class="play-time has-text-grey is-size-7">{{ relativeTime(it.at) }}</span>
+          </template>
+          <template v-else-if="it.kind === 'mute_on'">
+            <b-icon icon="gavel" pack="fas" size="is-small" class="play-icon" />
+            <strong class="play-user">{{ it.username }}</strong>
+            <em class="play-name">muted everyone</em>
+            <span class="play-time has-text-grey is-size-7">{{ relativeTime(it.at) }}</span>
+          </template>
+          <template v-else>
+            <b-icon icon="volume-high" pack="fas" size="is-small" class="play-icon" />
+            <strong class="play-user">{{ it.username ?? "auto" }}</strong>
+            <em class="play-name">lifted mute</em>
             <span class="play-time has-text-grey is-size-7">{{ relativeTime(it.at) }}</span>
           </template>
         </li>

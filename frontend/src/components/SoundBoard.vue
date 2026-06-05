@@ -23,11 +23,21 @@
       <code>tag:"my tag"</code>, joined with <code>AND</code>. Enter plays the
       result if only one match remains.
     </p>
-    <p class="search-hint has-text-grey is-size-7 mb-3">
+    <p class="search-hint has-text-grey is-size-7 mb-1">
       Tip 2: click a category header to collapse or expand it.
       <a class="collapse-link" @click="expandAll">Expand all</a>
       <span class="has-text-grey-light"> · </span>
       <a class="collapse-link" @click="collapseAll">Collapse all</a>
+    </p>
+    <p class="search-hint has-text-grey is-size-7 mb-3 favorites-tip">
+      Tip 3: use favorites to mark your personal sounds.
+      <a class="collapse-link" @click="showOnlyFavorites = true">Show favorites</a>
+      <span class="has-text-grey-light"> · </span>
+      <a class="collapse-link" @click="showOnlyFavorites = false">Show all</a>
+      <span v-if="showOnlyFavorites" class="tag is-warning is-light favorites-tip__tag">
+        <b-icon icon="star" pack="fas" size="is-small" class="mr-1" />
+        Favorites only
+      </span>
     </p>
 
     <div v-if="sounds.loading" class="has-text-centered py-5">
@@ -73,6 +83,7 @@ const showUpload = ref(false);
 const filter = ref("");
 const filterInput = ref<{ focus?: () => void } | null>(null);
 const collapsed = ref<Set<string>>(new Set());
+const showOnlyFavorites = ref(false);
 
 function isCollapsed(key: string): boolean {
   return collapsed.value.has(key);
@@ -128,7 +139,8 @@ function parseQuery(raw: string): ParsedQuery {
 
 const visible = computed(() => {
   const q = parseQuery(filter.value);
-  const list = sounds.sortedByName;
+  let list = sounds.sortedByName;
+  if (showOnlyFavorites.value) list = list.filter((s) => s.is_favorite);
   if (!q.tags.length && !q.categories.length && !q.text) return list;
   return list.filter((s) => {
     const sName = s.display_name.toLowerCase();
@@ -220,6 +232,16 @@ function onFilterEnter(): void {
 .filter-input {
   flex: 1 1 240px;
   min-width: 200px;
+}
+.favorites-tip {
+  position: relative;
+}
+.favorites-tip__tag {
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  white-space: nowrap;
 }
 .collapse-link {
   cursor: pointer;

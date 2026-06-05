@@ -7,25 +7,36 @@ export const useGlobalMuteStore = defineStore("globalMute", () => {
   const active = ref(false);
   const by = ref<string | null>(null);
   const at = ref<string | null>(null);
+  const expiresAt = ref<string | null>(null);
   const error = ref<string | null>(null);
+
+  function apply(data: {
+    active: boolean;
+    by?: string | null;
+    at?: string | null;
+    expires_at?: string | null;
+  }): void {
+    active.value = data.active;
+    by.value = data.by ?? null;
+    at.value = data.at ?? null;
+    expiresAt.value = data.expires_at ?? null;
+  }
 
   async function refresh(): Promise<void> {
     const { data } = await api.GET("/api/global-mute");
-    if (data) {
-      active.value = data.active;
-      by.value = data.by ?? null;
-      at.value = data.at ?? null;
-    }
+    if (data) apply(data);
   }
 
-  async function setActive(value: boolean): Promise<boolean> {
-    const { data, response } = await api.POST("/api/global-mute", {
-      body: { active: value },
-    });
+  async function setActive(
+    value: boolean,
+    durationMinutes?: number | null,
+  ): Promise<boolean> {
+    const body = value
+      ? { active: true, duration_minutes: durationMinutes ?? null }
+      : { active: false };
+    const { data, response } = await api.POST("/api/global-mute", { body });
     if (data) {
-      active.value = data.active;
-      by.value = data.by ?? null;
-      at.value = data.at ?? null;
+      apply(data);
       error.value = null;
       return true;
     }
@@ -33,11 +44,14 @@ export const useGlobalMuteStore = defineStore("globalMute", () => {
     return false;
   }
 
-  function applyEvent(ev: { active: boolean; by: string | null; at?: string | null }): void {
-    active.value = ev.active;
-    by.value = ev.by ?? null;
-    at.value = ev.at ?? null;
+  function applyEvent(ev: {
+    active: boolean;
+    by: string | null;
+    at?: string | null;
+    expires_at?: string | null;
+  }): void {
+    apply(ev);
   }
 
-  return { active, by, at, error, refresh, setActive, applyEvent };
+  return { active, by, at, expiresAt, error, refresh, setActive, applyEvent };
 });

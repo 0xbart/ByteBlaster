@@ -39,15 +39,33 @@
           <strong class="has-text-white">{{ me.username }}</strong>
           <span v-if="isSuperadmin" class="tag is-warning is-light ml-2">superadmin</span>
           <span v-else-if="isAdmin" class="tag is-success ml-2">admin</span>
-          <a
-            v-if="isMutemaster || isSuperadmin"
-            class="gavel-inline ml-3"
-            :class="globalMute.active ? 'has-text-danger' : 'has-text-white'"
-            :title="globalMute.active ? 'Lift global mute' : 'Mute everyone'"
-            @click="onGavelToggle"
-          >
-            <b-icon icon="gavel" pack="fas" size="is-small" />
-          </a>
+          <span v-if="isMutemaster || isSuperadmin" class="gavel-control ml-3">
+            <a
+              class="gavel-inline"
+              :class="globalMute.active ? 'has-text-danger' : 'has-text-white'"
+              :title="globalMute.active ? 'Lift global mute' : 'Mute everyone (hover for options)'"
+              @click="onGavelClick"
+            >
+              <b-icon icon="gavel" pack="fas" size="is-small" />
+            </a>
+            <div v-if="!globalMute.active" class="gavel-popover">
+              <span class="gavel-popover__title">Mute for…</span>
+              <label
+                v-for="opt in muteDurations"
+                :key="opt.label"
+                class="mute-radio"
+              >
+                <input
+                  type="radio"
+                  name="mute-duration"
+                  :value="opt.minutes ?? 'inf'"
+                  v-model="selectedMuteDuration"
+                  @change="onSetMute(opt.minutes)"
+                />
+                <span>{{ opt.label }}</span>
+              </label>
+            </div>
+          </span>
           <a
             class="tag ml-3 presence-tag"
             :class="wsConnected ? 'is-success' : 'is-warning'"
@@ -113,6 +131,7 @@
     <div v-if="globalMute.active" class="audio-global-mute-banner">
       <b-icon icon="gavel" pack="fas" size="is-small" class="mr-2" />
       Sounds globally muted{{ globalMute.by ? ` by ${globalMute.by}` : "" }}
+      <span v-if="muteCountdown" class="ml-2 mute-countdown">· {{ muteCountdown }}</span>
     </div>
 
     <main class="section">
@@ -153,7 +172,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref, watch } from "vue";
+import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { storeToRefs } from "pinia";
 
 import ClaimUsernameDialog from "./components/ClaimUsernameDialog.vue";
@@ -211,8 +230,57 @@ function onVolumeInput(ev: Event): void {
   audio.setVolume(Number(target.value));
 }
 
-function onGavelToggle(): void {
-  void globalMute.setActive(!globalMute.active);
+const selectedMuteDuration = ref<number | "inf">(2);
+const muteDurations: { label: string; minutes: number | null }[] = [
+  { label: "1 min", minutes: 1 },
+  { label: "2 min", minutes: 2 },
+  { label: "5 min", minutes: 5 },
+  { label: "10 min", minutes: 10 },
+  { label: "30 min", minutes: 30 },
+  { label: "60 min", minutes: 60 },
+  { label: "∞", minutes: null },
+];
+
+const nowTick = ref(Date.now());
+let muteTicker: number | null = null;
+
+const muteCountdown = computed(() => {
+  if (!globalMute.active || !globalMute.expiresAt) return "";
+  const remaining = Math.max(0, new Date(globalMute.expiresAt).getTime() - nowTick.value);
+  if (remaining <= 0) return "0s";
+  const totalSec = Math.floor(remaining / 1000);
+  const m = Math.floor(totalSec / 60);
+  const s = totalSec % 60;
+  return m > 0 ? `${m}m${s.toString().padStart(2, "0")}s left` : `${s}s left`;
+});
+
+watch(
+  () => globalMute.active,
+  (active) => {
+    if (active && muteTicker === null) {
+      muteTicker = window.setInterval(() => {
+        nowTick.value = Date.now();
+      }, 1000);
+    } else if (!active && muteTicker !== null) {
+      window.clearInterval(muteTicker);
+      muteTicker = null;
+    }
+  },
+);
+
+onBeforeUnmount(() => {
+  if (muteTicker !== null) window.clearInterval(muteTicker);
+});
+
+function onGavelClick(): void {
+  if (globalMute.active) {
+    void globalMute.setActive(false);
+  } else {
+    void globalMute.setActive(true, 2);
+  }
+}
+function onSetMute(minutes: number | null): void {
+  void globalMute.setActive(true, minutes);
 }
 
 function onLiveClick(): void {
@@ -256,10 +324,97 @@ watch(
   cursor: pointer;
   user-select: none;
 }
+.gavel-control {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
 .gavel-inline {
   cursor: pointer;
   display: inline-flex;
   align-items: center;
+}
+.gavel-popover {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translate(-50%, 23px);
+  background: hsl(0, 0%, 17%);
+  border: 1px solid hsl(0, 0%, 28%);
+  border-radius: 6px;
+  padding: 0.6rem 0.6rem 0.5rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.12s ease-in-out;
+  z-index: 1200;
+  min-width: 140px;
+}
+.gavel-popover::before {
+  content: "";
+  position: absolute;
+  top: -23px;
+  left: 0;
+  right: 0;
+  height: 23px;
+}
+.gavel-popover__title {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: hsl(0, 0%, 70%);
+  margin-bottom: 0.25rem;
+}
+.mute-radio {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.35rem 0.6rem;
+  border-radius: 4px;
+  cursor: pointer;
+  color: hsl(0, 0%, 92%);
+  font-size: 0.8rem;
+  font-weight: 500;
+  transition: background 0.1s ease-in-out;
+  user-select: none;
+}
+.mute-radio:hover {
+  background: hsl(0, 0%, 24%);
+}
+.mute-radio input[type="radio"] {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 2px solid hsl(0, 0%, 55%);
+  background: transparent;
+  margin: 0;
+  cursor: pointer;
+  flex: 0 0 auto;
+  position: relative;
+}
+.mute-radio input[type="radio"]:checked {
+  border-color: hsl(204, 86%, 53%);
+}
+.mute-radio input[type="radio"]:checked::after {
+  content: "";
+  position: absolute;
+  inset: 2px;
+  border-radius: 50%;
+  background: hsl(204, 86%, 53%);
+}
+.gavel-control:hover .gavel-popover,
+.gavel-control:focus-within .gavel-popover {
+  opacity: 1;
+  pointer-events: auto;
+}
+.mute-countdown {
+  font-variant-numeric: tabular-nums;
 }
 .theme-toggle {
   cursor: pointer;

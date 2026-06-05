@@ -532,6 +532,8 @@ export interface components {
         GlobalMuteSetIn: {
             /** Active */
             active: boolean;
+            /** Duration Minutes */
+            duration_minutes?: number | null;
         };
         /** GlobalMuteState */
         GlobalMuteState: {
@@ -541,6 +543,8 @@ export interface components {
             by?: string | null;
             /** At */
             at?: string | null;
+            /** Expires At */
+            expires_at?: string | null;
         };
         /** HTTPValidationError */
         HTTPValidationError: {
