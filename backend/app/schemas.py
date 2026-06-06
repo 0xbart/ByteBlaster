@@ -235,3 +235,8 @@ class WsGlobalMuteEvent(BaseModel):
     by: str | None = None
     at: datetime | None = None
     expires_at: datetime | None = None
+
+
+class WsStopAllEvent(BaseModel):
+    type: Literal["stop_all"] = "stop_all"
+    by: str

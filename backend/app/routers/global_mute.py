@@ -3,7 +3,7 @@ from __future__ import annotations
 from fastapi import APIRouter
 
 from ..deps import CurrentUser, MutemasterUser
-from ..schemas import GlobalMuteSetIn, GlobalMuteState, WsGlobalMuteEvent
+from ..schemas import GlobalMuteSetIn, GlobalMuteState, WsGlobalMuteEvent, WsStopAllEvent
 from ..services import global_mute
 from ..ws.manager import manager
 
@@ -25,3 +25,8 @@ async def set_global_mute(
         WsGlobalMuteEvent(active=new.active, by=new.by, at=new.at, expires_at=new.expires_at)
     )
     return new
+
+
+@router.post("/stop-all", status_code=204)
+async def stop_all(user: CurrentUser) -> None:
+    await manager.broadcast(WsStopAllEvent(by=user.username))

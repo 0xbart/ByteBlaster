@@ -122,7 +122,7 @@
       @click="audioStop"
     >
       <b-icon icon="stop" pack="fas" size="is-small" class="mr-2" />
-      Click to stop playing sound
+      Click to stop playing sound (or press M)
     </div>
     <div v-if="soundsStore.rateLimited" class="audio-rate-banner">
       <b-icon icon="bell-slash" pack="fas" size="is-small" class="mr-2" />
@@ -154,6 +154,7 @@
           <div v-show="view === 'board'" class="board-layout">
             <SoundBoard class="board" />
             <div class="sidebar">
+              <SchedulerPanel />
               <PlayHistoryPanel />
               <MostPlayedPanel />
               <TrendingPanel />
@@ -173,11 +174,13 @@
 
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
+import { api } from "@/api";
 import { storeToRefs } from "pinia";
 
 import ClaimUsernameDialog from "./components/ClaimUsernameDialog.vue";
 import SoundBoard from "./components/SoundBoard.vue";
 import PlayHistoryPanel from "./components/PlayHistoryPanel.vue";
+import SchedulerPanel from "./components/SchedulerPanel.vue";
 import MostPlayedPanel from "./components/MostPlayedPanel.vue";
 import StatsView from "./components/StatsView.vue";
 import ExploreView from "./components/ExploreView.vue";
@@ -270,6 +273,29 @@ watch(
 
 onBeforeUnmount(() => {
   if (muteTicker !== null) window.clearInterval(muteTicker);
+  window.removeEventListener("keydown", onGlobalKey);
+});
+
+function onGlobalKey(ev: KeyboardEvent): void {
+  const k = ev.key.toLowerCase();
+  if (k !== "m" && k !== "k") return;
+  if (ev.ctrlKey || ev.metaKey || ev.altKey) return;
+  const t = ev.target as HTMLElement | null;
+  if (t) {
+    const tag = t.tagName;
+    if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || t.isContentEditable) return;
+  }
+  ev.preventDefault();
+  if (k === "m") {
+    audioStop();
+  } else {
+    audioStop();
+    void api.POST("/api/stop-all", {});
+  }
+}
+
+onMounted(() => {
+  window.addEventListener("keydown", onGlobalKey);
 });
 
 function onGavelClick(): void {

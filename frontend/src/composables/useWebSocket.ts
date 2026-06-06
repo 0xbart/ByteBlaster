@@ -21,7 +21,8 @@ type WsEvent =
   | { type: "tag_renamed"; id: number; old_name: string; new_name: string }
   | { type: "category_renamed"; id: number; new_name: string }
   | { type: "presence"; users: PresenceUser[] }
-  | { type: "global_mute"; active: boolean; by: string | null; at: string | null; expires_at: string | null };
+  | { type: "global_mute"; active: boolean; by: string | null; at: string | null; expires_at: string | null }
+  | { type: "stop_all"; by: string };
 
 function wsUrl(): string {
   const proto = window.location.protocol === "https:" ? "wss:" : "ws:";
@@ -89,6 +90,9 @@ export function useWebSocket() {
       case "category_renamed":
         sounds.renameCategoryLocal(ev.id, ev.new_name);
         categories.applyRename(ev.id, ev.new_name);
+        break;
+      case "stop_all":
+        audio.stopAll();
         break;
       case "global_mute": {
         const wasActive = globalMute.active;

@@ -29,6 +29,14 @@
         <i class="fas fa-pencil" aria-hidden="true" />
       </button>
       <button
+        class="button is-small is-link action-btn"
+        title="Schedule"
+        tabindex="-1"
+        @click.stop="scheduleOpen = true"
+      >
+        <i class="fas fa-clock" aria-hidden="true" />
+      </button>
+      <button
         v-if="canDelete"
         class="button is-small is-danger action-btn"
         title="Delete"
@@ -53,6 +61,12 @@
     </div>
 
     <EditSoundDialog v-if="editOpen" :sound="sound" @close="editOpen = false" />
+    <ScheduleDialog
+      v-if="scheduleOpen"
+      :sound-id="sound.id"
+      :sound-name="sound.display_name"
+      @close="scheduleOpen = false"
+    />
     <ConfirmDialog
       v-if="deleteOpen"
       title="Delete sound"
@@ -67,6 +81,7 @@
 import { computed, ref } from "vue";
 import EditSoundDialog from "./EditSoundDialog.vue";
 import ConfirmDialog from "./ConfirmDialog.vue";
+import ScheduleDialog from "./ScheduleDialog.vue";
 import { useSoundsStore } from "@/stores/sounds";
 import { useUserStore } from "@/stores/user";
 import { useThemeStore } from "@/stores/theme";
@@ -78,6 +93,7 @@ const user = useUserStore();
 const theme = useThemeStore();
 const editOpen = ref(false);
 const deleteOpen = ref(false);
+const scheduleOpen = ref(false);
 
 const canEdit = computed(() => user.isAdmin);
 const canDelete = computed(
