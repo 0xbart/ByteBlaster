@@ -21,6 +21,7 @@ let cursor = 0;
 const unlocked = ref(false);
 const active = ref<Set<HTMLAudioElement>>(new Set());
 const playing = computed(() => active.value.size > 0);
+const playingCount = computed(() => active.value.size);
 const queue: string[] = [];
 
 function markDone(el: HTMLAudioElement): void {
@@ -108,5 +109,5 @@ export function useAudioPlayer() {
     playOnElement(url, audio.volume / 100);
   }
 
-  return { play, unlocked, playing, stopAll };
+  return { play, unlocked, playing, playingCount, stopAll };
 }

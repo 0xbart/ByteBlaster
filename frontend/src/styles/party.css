@@ -1,0 +1,118 @@
+/* Party-mode global effects (balloons + button bounce + navbar accents). */
+
+.balloon-stage {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1200;
+  overflow: hidden;
+}
+.balloon {
+  position: absolute;
+  bottom: -60px;
+  width: 38px;
+  height: 48px;
+  border-radius: 50%;
+  box-shadow: inset -4px -6px 0 rgba(0, 0, 0, 0.15);
+  animation: balloon-float linear forwards;
+}
+.balloon::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 100%;
+  width: 1px;
+  height: 60px;
+  background: rgba(0, 0, 0, 0.4);
+}
+@keyframes balloon-float {
+  to {
+    transform: translateY(-110vh) rotate(8deg);
+    opacity: 0.7;
+  }
+}
+
+@keyframes party-bounce {
+  0% {
+    transform: rotate(var(--tilt, 0deg)) scale(1) translate(0, 0);
+  }
+  10% {
+    transform: rotate(calc(var(--tilt, 0deg) + 4deg)) scale(1.05) translate(-2px, 0);
+  }
+  20% {
+    transform: rotate(calc(var(--tilt, 0deg) - 4deg)) scale(1.05) translate(2px, 0);
+  }
+  35% {
+    transform: rotate(calc(var(--tilt, 0deg) + 3deg)) scale(1.07) translate(-2px, 1px);
+  }
+  50% {
+    transform: rotate(calc(var(--tilt, 0deg) - 3deg)) scale(1.06) translate(2px, -1px);
+  }
+  65% {
+    transform: rotate(calc(var(--tilt, 0deg) + 2deg)) scale(0.98) translate(-1px, 0);
+  }
+  80% {
+    transform: rotate(calc(var(--tilt, 0deg) - 2deg)) scale(0.99) translate(1px, 0);
+  }
+  100% {
+    transform: rotate(var(--tilt, 0deg)) scale(1) translate(0, 0);
+  }
+}
+.party-bounce {
+  animation: party-bounce 380ms ease-in-out;
+}
+
+.party-toggle.has-text-success {
+  animation: party-pulse 1.6s ease-in-out infinite;
+}
+@keyframes party-pulse {
+  0%,
+  100% {
+    filter: drop-shadow(0 0 0 transparent);
+  }
+  50% {
+    filter: drop-shadow(0 0 6px hsl(141, 70%, 55%));
+  }
+}
+
+.party-rainbow {
+  position: fixed;
+  left: 0;
+  right: 0;
+  height: 6px;
+  background: linear-gradient(
+    90deg,
+    #ff6b6b,
+    #ffd93d,
+    #6bcb77,
+    #4d96ff,
+    #c780ff,
+    #ff6b6b
+  );
+  background-size: 300% 100%;
+  animation: party-rainbow 8s linear infinite;
+  z-index: 2000;
+  pointer-events: none;
+}
+.party-rainbow--top {
+  top: 3.25rem;
+}
+.party-rainbow--bottom {
+  bottom: 0;
+}
+@keyframes party-rainbow {
+  to {
+    background-position: 300% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .balloon-stage,
+  .party-rainbow,
+  .party-toggle.has-text-success {
+    animation: none !important;
+  }
+  .balloon-stage {
+    display: none;
+  }
+}

@@ -7,6 +7,7 @@ import { useCategoriesStore } from "@/stores/categories";
 import { useStatsStore } from "@/stores/stats";
 import { useAudioStore } from "@/stores/audio";
 import { useGlobalMuteStore } from "@/stores/globalMute";
+import { usePartyStore } from "@/stores/party";
 import { celebrate } from "./useConfetti";
 import { usePresenceStore, type PresenceUser } from "@/stores/presence";
 import { useAudioPlayer } from "./useAudioPlayer";
@@ -37,6 +38,7 @@ export function useWebSocket() {
   const stats = useStatsStore();
   const audioStore = useAudioStore();
   const globalMute = useGlobalMuteStore();
+  const party = usePartyStore();
   const presence = usePresenceStore();
   const audio = useAudioPlayer();
 
@@ -65,6 +67,7 @@ export function useWebSocket() {
           played_at: ev.at,
         } satisfies PlayOut);
         stats.bump(ev.sound_id, ev.display_name, ev.by);
+        if (party.active) celebrate();
         break;
       case "sound_added":
         sounds.upsert(ev.sound);

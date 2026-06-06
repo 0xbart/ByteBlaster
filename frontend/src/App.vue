@@ -98,6 +98,14 @@
           </div>
         </div>
         <a
+          class="navbar-item party-toggle"
+          :class="party.active ? 'has-text-success' : 'has-text-white'"
+          :title="party.active ? 'Party mode is ON' : 'Toggle party mode'"
+          @click="party.toggle"
+        >
+          <b-icon icon="cake-candles" pack="fas" size="is-small" />
+        </a>
+        <a
           class="navbar-item theme-toggle"
           :title="theme.isDark ? 'Switch to light mode' : 'Switch to dark mode'"
           @click="theme.toggle"
@@ -110,6 +118,8 @@
         </a>
       </div>
     </nav>
+    <div v-if="party.active" class="party-rainbow party-rainbow--top" aria-hidden="true" />
+    <div v-if="party.active" class="party-rainbow party-rainbow--bottom" aria-hidden="true" />
 
     <div v-if="!audioUnlocked" class="audio-locked-banner">
       <b-icon icon="volume-mute" pack="fas" size="is-small" class="mr-2" />
@@ -193,6 +203,8 @@ import { useCategoriesStore } from "./stores/categories";
 import { useTagsStore } from "./stores/tags";
 import { useStatsStore } from "./stores/stats";
 import { useGlobalMuteStore } from "./stores/globalMute";
+import { usePartyStore } from "./stores/party";
+import { releaseBalloons } from "./composables/useBalloons";
 import { usePresenceStore } from "./stores/presence";
 import { useThemeStore } from "./stores/theme";
 import { useAudioStore } from "./stores/audio";
@@ -205,6 +217,7 @@ const categoriesStore = useCategoriesStore();
 const tagsStore = useTagsStore();
 const statsStore = useStatsStore();
 const globalMute = useGlobalMuteStore();
+const party = usePartyStore();
 const presence = usePresenceStore();
 const theme = useThemeStore();
 const audio = useAudioStore();
@@ -219,7 +232,22 @@ const view = ref<"board" | "stats" | "admin" | "explore">("board");
 const presenceOpen = ref(false);
 
 const { connected: wsConnected } = useWebSocket();
-const { unlocked: audioUnlocked, playing: audioPlaying, stopAll: audioStop } = useAudioPlayer();
+const {
+  unlocked: audioUnlocked,
+  playing: audioPlaying,
+  playingCount: audioPlayingCount,
+  stopAll: audioStop,
+} = useAudioPlayer();
+
+let lastBalloonTrigger = 0;
+watch(audioPlayingCount, (n, prev) => {
+  if (!party.active) return;
+  if (n < 3) return;
+  if (n <= (prev ?? 0)) return;
+  if (Date.now() - lastBalloonTrigger < 400) return;
+  lastBalloonTrigger = Date.now();
+  releaseBalloons(8);
+});
 
 watch(
   () => audio.muted,

@@ -1,5 +1,5 @@
 <template>
-  <div class="sound-button">
+  <div class="sound-button" :class="{ 'party-bounce': bouncing && party.active }" :style="partyStyle">
     <span v-if="sound.duration_ms" class="duration-badge">
       {{ formatDuration(sound.duration_ms) }}
     </span>
@@ -85,12 +85,21 @@ import ScheduleDialog from "./ScheduleDialog.vue";
 import { useSoundsStore } from "@/stores/sounds";
 import { useUserStore } from "@/stores/user";
 import { useThemeStore } from "@/stores/theme";
+import { usePartyStore } from "@/stores/party";
 import type { SoundOut } from "@/api";
 
 const props = defineProps<{ sound: SoundOut }>();
 const sounds = useSoundsStore();
 const user = useUserStore();
 const theme = useThemeStore();
+const party = usePartyStore();
+const bouncing = ref(false);
+let bounceTimer: number | null = null;
+
+const tiltDeg = ((props.sound.id * 37) % 5) - 2;
+const partyStyle = computed(() =>
+  party.active ? `--tilt: ${tiltDeg}deg; transform: rotate(${tiltDeg}deg);` : "",
+);
 const editOpen = ref(false);
 const deleteOpen = ref(false);
 const scheduleOpen = ref(false);
@@ -107,6 +116,17 @@ const tooltip = computed(() =>
 
 function onPlay(): void {
   void sounds.play(props.sound.id);
+  if (party.active) {
+    bouncing.value = false;
+    if (bounceTimer !== null) window.clearTimeout(bounceTimer);
+    void requestAnimationFrame(() => {
+      bouncing.value = true;
+      bounceTimer = window.setTimeout(() => {
+        bouncing.value = false;
+        bounceTimer = null;
+      }, 420);
+    });
+  }
 }
 
 function confirmDelete(): void {
