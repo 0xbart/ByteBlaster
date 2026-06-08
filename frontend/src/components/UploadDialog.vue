@@ -87,6 +87,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
 import { useSoundsStore } from "@/stores/sounds";
+import { useEscapeClose } from "@/composables/useEscapeClose";
 import { useCategoriesStore } from "@/stores/categories";
 import { useTagsStore } from "@/stores/tags";
 import { celebrate } from "@/composables/useConfetti";
@@ -97,6 +98,7 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits<(e: "close") => void>();
+useEscapeClose(() => emit("close"));
 
 const sounds = useSoundsStore();
 const categories = useCategoriesStore();

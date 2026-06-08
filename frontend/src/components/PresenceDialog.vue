@@ -61,9 +61,11 @@
 <script setup lang="ts">
 import { storeToRefs } from "pinia";
 import { usePresenceStore } from "@/stores/presence";
+import { useEscapeClose } from "@/composables/useEscapeClose";
 import { useUserStore } from "@/stores/user";
 
 const emit = defineEmits<(e: "close") => void>();
+useEscapeClose(() => emit("close"));
 const presence = usePresenceStore();
 const userStore = useUserStore();
 const { me } = storeToRefs(userStore);

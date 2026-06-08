@@ -22,6 +22,8 @@
 </template>
 
 <script setup lang="ts">
+import { useEscapeClose } from "@/composables/useEscapeClose";
+
 withDefaults(
   defineProps<{
     title: string;
@@ -41,6 +43,8 @@ const emit = defineEmits<{
   (e: "confirm"): void;
   (e: "close"): void;
 }>();
+
+useEscapeClose(() => emit("close"));
 
 function onConfirm(): void {
   emit("confirm");

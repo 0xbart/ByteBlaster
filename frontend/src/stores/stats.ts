@@ -32,7 +32,7 @@ export const useStatsStore = defineStore("stats", () => {
     const [a, t, u] = await Promise.all([
       api.GET("/api/stats/sounds"),
       api.GET("/api/stats/trending", {
-        params: { query: { days: 7, limit: 10 } },
+        params: { query: { days: 7, limit: 15 } },
       }),
       api.GET("/api/stats/users", { params: { query: { limit: 20 } } }),
     ]);

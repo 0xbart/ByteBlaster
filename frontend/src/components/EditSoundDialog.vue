@@ -52,12 +52,14 @@
 <script setup lang="ts">
 import { computed, ref } from "vue";
 import { useSoundsStore } from "@/stores/sounds";
+import { useEscapeClose } from "@/composables/useEscapeClose";
 import { useCategoriesStore } from "@/stores/categories";
 import { useTagsStore } from "@/stores/tags";
 import type { SoundOut } from "@/api";
 
 const props = defineProps<{ sound: SoundOut }>();
 const emit = defineEmits<(e: "close") => void>();
+useEscapeClose(() => emit("close"));
 
 const sounds = useSoundsStore();
 const categories = useCategoriesStore();

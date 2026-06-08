@@ -60,20 +60,22 @@
       </button>
     </div>
 
-    <EditSoundDialog v-if="editOpen" :sound="sound" @close="editOpen = false" />
-    <ScheduleDialog
-      v-if="scheduleOpen"
-      :sound-id="sound.id"
-      :sound-name="sound.display_name"
-      @close="scheduleOpen = false"
-    />
-    <ConfirmDialog
-      v-if="deleteOpen"
-      title="Delete sound"
-      :message="`Delete '${sound.display_name}'? This cannot be undone.`"
-      @confirm="confirmDelete"
-      @close="deleteOpen = false"
-    />
+    <Teleport to="body">
+      <EditSoundDialog v-if="editOpen" :sound="sound" @close="editOpen = false" />
+      <ScheduleDialog
+        v-if="scheduleOpen"
+        :sound-id="sound.id"
+        :sound-name="sound.display_name"
+        @close="scheduleOpen = false"
+      />
+      <ConfirmDialog
+        v-if="deleteOpen"
+        title="Delete sound"
+        :message="`Delete '${sound.display_name}'? This cannot be undone.`"
+        @confirm="confirmDelete"
+        @close="deleteOpen = false"
+      />
+    </Teleport>
   </div>
 </template>
 

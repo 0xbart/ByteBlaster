@@ -58,9 +58,11 @@
 <script setup lang="ts">
 import { computed, ref } from "vue";
 import { useSchedulerStore, SCHEDULER_MAX_MINUTES } from "@/stores/scheduler";
+import { useEscapeClose } from "@/composables/useEscapeClose";
 
 const props = defineProps<{ soundId: number; soundName: string }>();
 const emit = defineEmits<(e: "close") => void>();
+useEscapeClose(() => emit("close"));
 
 const schedulerStore = useSchedulerStore();
 const minutes = ref(1);

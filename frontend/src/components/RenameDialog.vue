@@ -38,6 +38,7 @@
 
 <script setup lang="ts">
 import { computed, ref } from "vue";
+import { useEscapeClose } from "@/composables/useEscapeClose";
 
 const props = withDefaults(
   defineProps<{
@@ -62,6 +63,8 @@ const emit = defineEmits<{
   (e: "confirm", value: string): void;
   (e: "close"): void;
 }>();
+
+useEscapeClose(() => emit("close"));
 
 const value = ref(props.initial);
 
