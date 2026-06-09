@@ -41,6 +41,14 @@
       >
         <span class="explore-name">{{ r.title }}</span>
         <button
+          class="button is-small is-warning add-btn editor-btn"
+          title="Send to editor"
+          tabindex="-1"
+          @click.stop="onSendToEditor(r)"
+        >
+          <i class="fas fa-sliders" aria-hidden="true" />
+        </button>
+        <button
           class="button is-small is-info add-btn"
           title="Add to soundboard"
           tabindex="-1"
@@ -87,10 +95,12 @@ import { ref } from "vue";
 import UploadDialog from "./UploadDialog.vue";
 import ExploreYoutube from "./ExploreYoutube.vue";
 import { useExploreStore } from "@/stores/explore";
+import { useEditorStore } from "@/stores/editor";
 import { useAudioPlayer } from "@/composables/useAudioPlayer";
 import type { ExploreResult } from "@/api";
 
 const explore = useExploreStore();
+const editorStore = useEditorStore();
 const audio = useAudioPlayer();
 const q = ref(explore.query);
 const addDialog = ref<ExploreResult | null>(null);
@@ -107,6 +117,9 @@ function onSearch(): void {
 }
 function onLocalPlay(url: string): void {
   audio.play(url);
+}
+function onSendToEditor(r: ExploreResult): void {
+  editorStore.queueFromExplore(r.mp3_url, r.title);
 }
 function onAdd(r: ExploreResult): void {
   addDialog.value = r;
@@ -140,7 +153,7 @@ function onAdd(r: ExploreResult): void {
   background: var(--bulma-scheme-main-ter, #f4f4f6);
   border: 1px solid var(--bulma-border-weak, rgba(128, 128, 128, 0.22));
   border-radius: 6px;
-  padding: 0.6rem 2.25rem 0.6rem 0.75rem;
+  padding: 0.6rem 4.25rem 0.6rem 0.75rem;
   min-height: 2.5em;
   cursor: pointer;
   user-select: none;
@@ -180,6 +193,9 @@ function onAdd(r: ExploreResult): void {
 .explore-card:focus-within .add-btn {
   opacity: 1;
   pointer-events: auto;
+}
+.editor-btn {
+  right: 42px;
 }
 .pagination-footer {
   display: flex;

@@ -21,3 +21,4 @@ export type ExploreResult = components["schemas"]["ExploreResult"];
 export type ExploreSearchOut = components["schemas"]["ExploreSearchOut"];
 export type YoutubeFetchIn = components["schemas"]["YoutubeFetchIn"];
 export type YoutubeFetchOut = components["schemas"]["YoutubeFetchOut"];
+export type EditorTrimIn = components["schemas"]["EditorTrimIn"];

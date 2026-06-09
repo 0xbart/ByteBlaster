@@ -138,6 +138,18 @@ class YoutubeFetchOut(BaseModel):
     preview_url: str
 
 
+class EditorTrimIn(BaseModel):
+    # Provide exactly one source; sound_id reads the file directly from
+    # storage (avoids loopback auth round-trip), source_url fetches HTTP.
+    sound_id: int | None = None
+    source_url: str | None = Field(default=None, min_length=4, max_length=1024)
+    start_s: float = Field(ge=0, le=24 * 3600)
+    end_s: float = Field(gt=0, le=24 * 3600)
+    display_name: str = Field(min_length=1, max_length=120)
+    category_id: int | None = None
+    tags: list[str] = []
+
+
 class PlayOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 

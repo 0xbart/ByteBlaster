@@ -5,7 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.routing import APIRoute
 
 from .config import get_settings
-from .routers import categories, explore, global_mute, me, plays, sounds, stats, tags, users
+from .routers import categories, editor, explore, global_mute, me, plays, sounds, stats, tags, users
 from .ws import router as ws_router
 
 
@@ -39,6 +39,7 @@ app.include_router(users.router, prefix="/api")
 app.include_router(stats.router, prefix="/api")
 app.include_router(explore.router, prefix="/api")
 app.include_router(global_mute.router, prefix="/api")
+app.include_router(editor.router, prefix="/api")
 app.include_router(ws_router.router)
 
 

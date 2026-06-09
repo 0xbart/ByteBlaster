@@ -154,10 +154,10 @@ async def search_explore(
 
 
 # ---------------------------------------------------------------------------
-# YouTube → mp3 via yt-dlp (max 20 s, served from temp preview directory)
+# YouTube → mp3 via yt-dlp (max 60 s, served from temp preview directory)
 # ---------------------------------------------------------------------------
 
-MAX_YT_DURATION_S = 20
+MAX_YT_DURATION_S = 60
 _PREVIEW_SUBDIR = "_yt_previews"
 _PREVIEW_TTL_SECONDS = 3600.0
 _TOKEN_RE = re.compile(r"^[A-Za-z0-9_\-]{8,40}\.mp3$")

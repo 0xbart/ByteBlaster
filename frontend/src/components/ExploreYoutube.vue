@@ -38,6 +38,14 @@
           {{ formatSec(explore.youtubeResult.duration_ms) }}
         </span>
         <button
+          class="button is-small is-warning add-btn editor-btn"
+          title="Send to editor"
+          tabindex="-1"
+          @click.stop="onSendToEditor"
+        >
+          <i class="fas fa-sliders" aria-hidden="true" />
+        </button>
+        <button
           class="button is-small is-info add-btn"
           title="Add to soundboard"
           tabindex="-1"
@@ -61,10 +69,12 @@
 import { ref } from "vue";
 import UploadDialog from "./UploadDialog.vue";
 import { useExploreStore } from "@/stores/explore";
+import { useEditorStore } from "@/stores/editor";
 import { useAudioPlayer } from "@/composables/useAudioPlayer";
 import type { YoutubeFetchOut } from "@/api";
 
 const explore = useExploreStore();
+const editorStore = useEditorStore();
 const audio = useAudioPlayer();
 const url = ref(explore.youtubeUrl);
 const addDialog = ref<YoutubeFetchOut | null>(null);
@@ -79,6 +89,11 @@ function onFetch(): void {
 }
 function onLocalPlay(u: string): void {
   audio.play(u);
+}
+function onSendToEditor(): void {
+  if (explore.youtubeResult) {
+    editorStore.queueFromExplore(explore.youtubeResult.preview_url, explore.youtubeResult.title);
+  }
 }
 function onAdd(): void {
   addDialog.value = explore.youtubeResult;
@@ -112,7 +127,7 @@ function formatSec(ms: number): string {
   background: var(--bulma-scheme-main-ter, #f4f4f6);
   border: 1px solid var(--bulma-border-weak, rgba(128, 128, 128, 0.22));
   border-radius: 6px;
-  padding: 0.6rem 2.5rem 0.6rem 0.75rem;
+  padding: 0.6rem 4.5rem 0.6rem 0.75rem;
   min-height: 2.5em;
   cursor: pointer;
   user-select: none;
@@ -151,5 +166,8 @@ function formatSec(ms: number): string {
 .explore-card:focus-within .add-btn {
   opacity: 1;
   pointer-events: auto;
+}
+.editor-btn {
+  right: 42px;
 }
 </style>

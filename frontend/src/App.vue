@@ -19,6 +19,13 @@
         </a>
         <a
           class="navbar-item has-text-white"
+          :class="{ 'is-active': view === 'editor' }"
+          @click="view = 'editor'"
+        >
+          Editor
+        </a>
+        <a
+          class="navbar-item has-text-white"
           :class="{ 'is-active': view === 'stats' }"
           @click="view = 'stats'"
         >
@@ -172,6 +179,7 @@
             </div>
           </div>
           <ExploreView v-if="view === 'explore'" />
+          <EditorView v-if="view === 'editor'" />
           <StatsView v-if="view === 'stats'" />
           <AdminPanel v-if="view === 'admin' && isAdmin" />
         </template>
@@ -194,6 +202,8 @@ import SchedulerPanel from "./components/SchedulerPanel.vue";
 import MostPlayedPanel from "./components/MostPlayedPanel.vue";
 import StatsView from "./components/StatsView.vue";
 import ExploreView from "./components/ExploreView.vue";
+import EditorView from "./components/EditorView.vue";
+import { useEditorStore } from "./stores/editor";
 import TrendingPanel from "./components/TrendingPanel.vue";
 import ActiveUsersPanel from "./components/ActiveUsersPanel.vue";
 import AdminPanel from "./components/AdminPanel.vue";
@@ -218,6 +228,11 @@ const tagsStore = useTagsStore();
 const statsStore = useStatsStore();
 const globalMute = useGlobalMuteStore();
 const party = usePartyStore();
+const editorStore = useEditorStore();
+
+watch(() => editorStore.pending, (p) => {
+  if (p) view.value = "editor";
+});
 const presence = usePresenceStore();
 const theme = useThemeStore();
 const audio = useAudioStore();
@@ -228,7 +243,7 @@ function retryConnect(): void {
   void userStore.fetchMe();
 }
 
-const view = ref<"board" | "stats" | "admin" | "explore">("board");
+const view = ref<"board" | "stats" | "admin" | "explore" | "editor">("board");
 const presenceOpen = ref(false);
 
 const { connected: wsConnected } = useWebSocket();
