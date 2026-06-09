@@ -34,7 +34,12 @@
         <b-button icon-left="play" @click="togglePlay">
           {{ playing ? "Pause" : "Play" }}
         </b-button>
-        <b-button icon-left="content-cut" @click="playRegion">Play region</b-button>
+        <b-button
+          :icon-left="regionPlaying ? 'stop' : 'content-cut'"
+          @click="playRegion"
+        >
+          {{ regionPlaying ? "Stop" : "Play region" }}
+        </b-button>
         <b-button icon-left="restore" @click="resetRegion">Reset</b-button>
         <span class="region-readout ml-3 has-text-grey is-size-7">
           Start {{ editor.startSec.toFixed(2) }}s · End {{ editor.endSec.toFixed(2) }}s ·
@@ -109,6 +114,7 @@ const containerEl = ref<HTMLDivElement | null>(null);
 let ws: WaveSurfer | null = null;
 let regionsPlugin: ReturnType<typeof RegionsPlugin.create> | null = null;
 const playing = ref(false);
+const regionPlaying = ref(false);
 
 const pickQuery = ref("");
 const urlInput = ref("");
@@ -168,6 +174,7 @@ function destroySurfer(): void {
     regionsPlugin = null;
   }
   playing.value = false;
+  regionPlaying.value = false;
 }
 
 function resetSurfer(): void {
@@ -197,16 +204,29 @@ function resetSurfer(): void {
     r.on("update", () => editor.setRegion(r.start, r.end));
   });
   ws.on("play", () => (playing.value = true));
-  ws.on("pause", () => (playing.value = false));
-  ws.on("finish", () => (playing.value = false));
+  ws.on("pause", () => {
+    playing.value = false;
+    regionPlaying.value = false;
+  });
+  ws.on("finish", () => {
+    playing.value = false;
+    regionPlaying.value = false;
+  });
 }
 
 function togglePlay(): void {
   ws?.playPause();
 }
 function playRegion(): void {
+  if (!ws) return;
+  if (regionPlaying.value) {
+    ws.pause();
+    return;
+  }
   const list = regionsPlugin?.getRegions() ?? [];
-  if (list.length > 0) list[0].play();
+  if (list.length === 0) return;
+  list[0].play(true); // stopAtEnd → wavesurfer.play(start, end)
+  regionPlaying.value = true;
 }
 function resetRegion(): void {
   if (!regionsPlugin || !editor.durationSec) return;

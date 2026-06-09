@@ -54,6 +54,42 @@ Keep separation of concerns strict:
 
 ---
 
+## 3.1 Project-Specific Notes (IMPORTANT)
+
+### Run everything via Docker Compose
+
+- The whole stack runs through Docker Compose. Do NOT run the app
+  locally via `npm` / `node` / `uvicorn` directly.
+- Dev: `docker compose -f docker-compose.dev.yml up`
+  (frontend Vite HMR `:5173`, backend `uvicorn --reload` `:8000`).
+  The frontend container runs `npm install` and regenerates
+  `src/api/schema.d.ts` from the live backend on startup.
+- Prod build/run: `docker compose up --build` (frontend nginx `:8080`).
+- Backend hot-reloads on `backend/app/*` changes; frontend hot-reloads
+  via Vite. No host-side `npm run dev` needed.
+
+### Authentication is IP-based (no tokens)
+
+- Users are identified by client IP, resolved from `X-Forwarded-For`
+  via trusted proxies (`BYTEBLASTER_TRUSTED_PROXIES`) — see
+  `backend/app/deps.py` (`require_user`, `CurrentUser`).
+- There are no auth tokens / sessions. An unknown IP → 401
+  `needs_claim` until a username is claimed.
+
+### Frontend icon pack is MDI, not Font Awesome
+
+- Buefy's default icon pack is **Material Design Icons** (`@mdi/font`).
+  `b-button icon-left="..."` expects MDI names (e.g. `content-save`,
+  `content-cut`, `restore`), NOT Font Awesome names — FA names render
+  blank. Raw `<i class="fas fa-...">` still works (FA CSS is loaded).
+
+### System dependencies
+
+- Backend image needs `ffmpeg` (audio editor trim + yt-dlp) and
+  `yt-dlp` (YouTube fetch). Both run inside the backend container.
+
+---
+
 ## 4. API Contract Rules (VERY IMPORTANT)
 
 OpenAPI is the single source of truth.

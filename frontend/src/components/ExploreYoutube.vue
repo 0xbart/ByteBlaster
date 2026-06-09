@@ -20,7 +20,7 @@
       </b-button>
     </div>
     <p class="has-text-grey is-size-7 mb-3">
-      Paste a YouTube URL. Audio max 20 seconds. Longer videos are rejected
+      Paste a YouTube URL. Audio max 90 seconds. Longer videos are rejected
       before download.
     </p>
     <p v-if="explore.youtubeError" class="has-text-danger">
