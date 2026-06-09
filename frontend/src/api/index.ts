@@ -17,6 +17,7 @@ export type SoundStatOut = components["schemas"]["SoundStatOut"];
 export type UserStatOut = components["schemas"]["UserStatOut"];
 export type CategoryStatOut = components["schemas"]["CategoryStatOut"];
 export type OverviewStatOut = components["schemas"]["OverviewStatOut"];
+export type MeStatsOut = components["schemas"]["MeStatsOut"];
 export type ExploreResult = components["schemas"]["ExploreResult"];
 export type ExploreSearchOut = components["schemas"]["ExploreSearchOut"];
 export type YoutubeFetchIn = components["schemas"]["YoutubeFetchIn"];

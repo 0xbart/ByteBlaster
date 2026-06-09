@@ -21,6 +21,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/me/stats": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get My Stats */
+        get: operations["get_my_stats"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/me/claim": {
         parameters: {
             query?: never;
@@ -613,6 +630,28 @@ export interface components {
             /** Ip */
             ip: string;
         };
+        /** MeStatsOut */
+        MeStatsOut: {
+            /** Total Plays */
+            total_plays: number;
+            /** Plays Day */
+            plays_day: number;
+            /** Plays Week */
+            plays_week: number;
+            /** Plays Month */
+            plays_month: number;
+            /** Favorites Count */
+            favorites_count: number;
+            /** Sounds Uploaded */
+            sounds_uploaded: number;
+            /**
+             * Member Since
+             * Format: date-time
+             */
+            member_since: string;
+            /** Top Sounds */
+            top_sounds: components["schemas"]["SoundStatOut"][];
+        };
         /** OverviewStatOut */
         OverviewStatOut: {
             /** Total Sounds */
@@ -819,6 +858,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["MeOut"];
+                };
+            };
+        };
+    };
+    get_my_stats: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MeStatsOut"];
                 };
             };
         };

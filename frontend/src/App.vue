@@ -1,5 +1,7 @@
 <template>
   <div class="app-shell">
+    <MatrixRain v-if="theme.skin === 'cyber'" />
+    <AccessGrantedOverlay />
     <nav class="navbar is-dark">
       <div class="navbar-brand">
         <a
@@ -41,9 +43,17 @@
         </a>
       </div>
       <div class="navbar-end">
-        <div v-if="me" class="navbar-item has-text-white">
+        <a
+          v-if="me"
+          class="navbar-item has-text-white"
+          :class="{ 'is-active': view === 'profile' }"
+          title="View your profile & stats"
+          @click="view = 'profile'"
+        >
           <span class="mr-2">Signed in as</span>
           <strong class="has-text-white">{{ me.username }}</strong>
+        </a>
+        <div v-if="me" class="navbar-item has-text-white">
           <span v-if="isSuperadmin" class="tag is-warning is-light ml-2">superadmin</span>
           <span v-else-if="isAdmin" class="tag is-success ml-2">admin</span>
           <span v-if="isMutemaster || isSuperadmin" class="gavel-control ml-3">
@@ -181,6 +191,7 @@
           <ExploreView v-if="view === 'explore'" />
           <EditorView v-if="view === 'editor'" />
           <StatsView v-if="view === 'stats'" />
+          <ProfileView v-if="view === 'profile'" />
           <AdminPanel v-if="view === 'admin' && isAdmin" />
         </template>
       </div>
@@ -203,6 +214,10 @@ import MostPlayedPanel from "./components/MostPlayedPanel.vue";
 import StatsView from "./components/StatsView.vue";
 import ExploreView from "./components/ExploreView.vue";
 import EditorView from "./components/EditorView.vue";
+import ProfileView from "./components/ProfileView.vue";
+import MatrixRain from "./components/MatrixRain.vue";
+import AccessGrantedOverlay from "./components/AccessGrantedOverlay.vue";
+import { useHackerTyper } from "./composables/useHackerTyper";
 import { useEditorStore } from "./stores/editor";
 import TrendingPanel from "./components/TrendingPanel.vue";
 import ActiveUsersPanel from "./components/ActiveUsersPanel.vue";
@@ -235,6 +250,7 @@ watch(() => editorStore.pending, (p) => {
 });
 const presence = usePresenceStore();
 const theme = useThemeStore();
+useHackerTyper();
 const audio = useAudioStore();
 const soundsStore = useSoundsStore();
 const { me, loaded, needsClaim, isAdmin, isSuperadmin, isMutemaster, serverDown } = storeToRefs(userStore);
@@ -243,7 +259,7 @@ function retryConnect(): void {
   void userStore.fetchMe();
 }
 
-const view = ref<"board" | "stats" | "admin" | "explore" | "editor">("board");
+const view = ref<"board" | "stats" | "admin" | "explore" | "editor" | "profile">("board");
 const presenceOpen = ref(false);
 
 const { connected: wsConnected } = useWebSocket();
@@ -621,4 +637,5 @@ watch(
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
   user-select: none;
 }
+
 </style>

@@ -116,6 +116,17 @@ class OverviewStatOut(BaseModel):
     plays_month: int
 
 
+class MeStatsOut(BaseModel):
+    total_plays: int
+    plays_day: int
+    plays_week: int
+    plays_month: int
+    favorites_count: int
+    sounds_uploaded: int
+    member_since: datetime
+    top_sounds: list[SoundStatOut]
+
+
 class ExploreResult(BaseModel):
     title: str
     mp3_url: str
@@ -251,4 +262,28 @@ class WsGlobalMuteEvent(BaseModel):
 
 class WsStopAllEvent(BaseModel):
     type: Literal["stop_all"] = "stop_all"
+    by: str
+
+
+# Theme override pushed by a superadmin to a single target user. mode = Bulma
+# light/dark; skin = standalone look layered on top (see frontend theme store).
+ThemeMode = Literal["light", "dark"]
+ThemeSkin = Literal["default", "cyber", "pink"]
+
+
+class WsSetThemeIn(BaseModel):
+    """Client→server message: a superadmin sets another user's active theme."""
+
+    type: Literal["set_theme"]
+    target_user_id: int
+    mode: ThemeMode
+    skin: ThemeSkin
+
+
+class WsThemeSetEvent(BaseModel):
+    """Server→client: applied only to the targeted user's sockets."""
+
+    type: Literal["theme_set"] = "theme_set"
+    mode: ThemeMode
+    skin: ThemeSkin
     by: str

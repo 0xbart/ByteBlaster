@@ -4,6 +4,7 @@ import json
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, WebSocket, WebSocketDisconnect
+from pydantic import ValidationError
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -11,6 +12,7 @@ from ..config import Settings, get_settings
 from ..db import get_session
 from ..deps import client_ip
 from ..models import User
+from ..schemas import WsSetThemeIn, WsThemeSetEvent
 from .manager import WsClient, manager
 
 router = APIRouter()
@@ -61,12 +63,29 @@ async def ws_endpoint(
                 msg = json.loads(raw)
             except (ValueError, TypeError):
                 continue
-            if isinstance(msg, dict) and msg.get("type") == "volume":
+            if not isinstance(msg, dict):
+                continue
+            mtype = msg.get("type")
+            if mtype == "volume":
                 try:
                     value = int(msg.get("value", 100))
                 except (TypeError, ValueError):
                     continue
                 await manager.set_volume(user.id, value)
+            elif mtype == "set_theme":
+                # Superadmin-only; cannot target self.
+                if not user.is_superadmin:
+                    continue
+                try:
+                    req = WsSetThemeIn.model_validate(msg)
+                except ValidationError:
+                    continue
+                if req.target_user_id == user.id:
+                    continue
+                await manager.send_to_user(
+                    req.target_user_id,
+                    WsThemeSetEvent(mode=req.mode, skin=req.skin, by=user.username),
+                )
     except WebSocketDisconnect:
         pass
     finally:

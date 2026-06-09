@@ -19,6 +19,7 @@
               <th>Role</th>
               <th>Volume</th>
               <th>IP</th>
+              <th v-if="isSuperadmin">Theme</th>
             </tr>
           </thead>
           <tbody>
@@ -44,6 +45,17 @@
                 </span>
               </td>
               <td><code>{{ u.ip }}</code></td>
+              <td v-if="isSuperadmin">
+                <div v-if="u.id !== me?.id" class="select is-small">
+                  <select :value="''" @change="applyTheme(u, $event)">
+                    <option value="" disabled>Set theme…</option>
+                    <option v-for="(p, i) in themePresets" :key="p.label" :value="i">
+                      {{ p.label }}
+                    </option>
+                  </select>
+                </div>
+                <span v-else class="has-text-grey">—</span>
+              </td>
             </tr>
           </tbody>
         </table>
@@ -60,15 +72,39 @@
 
 <script setup lang="ts">
 import { storeToRefs } from "pinia";
-import { usePresenceStore } from "@/stores/presence";
+import { usePresenceStore, type PresenceUser } from "@/stores/presence";
 import { useEscapeClose } from "@/composables/useEscapeClose";
 import { useUserStore } from "@/stores/user";
+import { useWsStore } from "@/stores/ws";
 
 const emit = defineEmits<(e: "close") => void>();
 useEscapeClose(() => emit("close"));
 const presence = usePresenceStore();
 const userStore = useUserStore();
-const { me } = storeToRefs(userStore);
+const { me, isSuperadmin } = storeToRefs(userStore);
+const ws = useWsStore();
+
+interface ThemePreset {
+  label: string;
+  mode: "light" | "dark";
+  skin: "default" | "cyber" | "pink";
+}
+
+const themePresets: ThemePreset[] = [
+  { label: "Light", mode: "light", skin: "default" },
+  { label: "Dark", mode: "dark", skin: "default" },
+  { label: "Cyber", mode: "dark", skin: "cyber" },
+  { label: "Pink", mode: "light", skin: "pink" },
+];
+
+function applyTheme(u: PresenceUser, ev: Event): void {
+  const sel = ev.target as HTMLSelectElement;
+  const p = themePresets[Number(sel.value)];
+  if (!p) return;
+  ws.setUserTheme(u.id, p.mode, p.skin);
+  // Reset so the same preset can be re-applied and the label stays neutral.
+  sel.value = "";
+}
 
 function volumeIcon(v: number): string {
   if (v === 0) return "volume-xmark";

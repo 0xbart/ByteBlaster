@@ -10,6 +10,8 @@ import { useGlobalMuteStore } from "@/stores/globalMute";
 import { usePartyStore } from "@/stores/party";
 import { celebrate } from "./useConfetti";
 import { usePresenceStore, type PresenceUser } from "@/stores/presence";
+import { useThemeStore } from "@/stores/theme";
+import { useWsStore } from "@/stores/ws";
 import { useAudioPlayer } from "./useAudioPlayer";
 import type { PlayOut, SoundOut } from "@/api";
 
@@ -23,7 +25,8 @@ type WsEvent =
   | { type: "category_renamed"; id: number; new_name: string }
   | { type: "presence"; users: PresenceUser[] }
   | { type: "global_mute"; active: boolean; by: string | null; at: string | null; expires_at: string | null }
-  | { type: "stop_all"; by: string };
+  | { type: "stop_all"; by: string }
+  | { type: "theme_set"; mode: "light" | "dark"; skin: "default" | "cyber" | "pink"; by: string };
 
 function wsUrl(): string {
   const proto = window.location.protocol === "https:" ? "wss:" : "ws:";
@@ -40,6 +43,8 @@ export function useWebSocket() {
   const globalMute = useGlobalMuteStore();
   const party = usePartyStore();
   const presence = usePresenceStore();
+  const theme = useThemeStore();
+  const wsStore = useWsStore();
   const audio = useAudioPlayer();
 
   const connected = ref(false);
@@ -96,6 +101,11 @@ export function useWebSocket() {
         break;
       case "stop_all":
         audio.stopAll();
+        break;
+      case "theme_set":
+        // A superadmin changed our theme remotely; apply immediately.
+        theme.setMode(ev.mode);
+        theme.setSkin(ev.skin);
         break;
       case "global_mute": {
         const wasActive = globalMute.active;
@@ -169,6 +179,16 @@ export function useWebSocket() {
     };
   }
 
+  function send(payload: unknown): boolean {
+    if (socket?.readyState !== WebSocket.OPEN) return false;
+    try {
+      socket.send(JSON.stringify(payload));
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
   function sendVolume(): void {
     if (socket?.readyState !== WebSocket.OPEN) return;
     try {
@@ -192,9 +212,13 @@ export function useWebSocket() {
     },
   );
 
-  onMounted(connect);
+  onMounted(() => {
+    wsStore.register(send);
+    connect();
+  });
   onBeforeUnmount(() => {
     stopped = true;
+    wsStore.register(null);
     if (reconnectTimer !== null) window.clearTimeout(reconnectTimer);
     if (volumeDebounce !== null) window.clearTimeout(volumeDebounce);
     socket?.close();

@@ -91,6 +91,23 @@ class ConnectionManager:
                 for ws in dead:
                     self._clients.pop(ws, None)
 
+    async def send_to_user(self, user_id: int, event: BaseModel | dict[str, Any]) -> None:
+        """Send to every socket (tab) belonging to a single user."""
+        payload = event.model_dump(mode="json") if isinstance(event, BaseModel) else event
+        async with self._lock:
+            targets = [ws for ws, c in self._clients.items() if c.user_id == user_id]
+        dead: list[WebSocket] = []
+        for ws in targets:
+            try:
+                await ws.send_json(payload)
+            except Exception as exc:  # noqa: BLE001
+                log.debug("Dropping dead WS connection: %s", exc)
+                dead.append(ws)
+        if dead:
+            async with self._lock:
+                for ws in dead:
+                    self._clients.pop(ws, None)
+
     async def broadcast_presence(self) -> None:
         # Local import to avoid a circular dep with schemas.
         from ..schemas import PresenceUser, WsPresenceEvent

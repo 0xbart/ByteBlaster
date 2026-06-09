@@ -1,0 +1,86 @@
+/* Pink skin — layered on top of light/dark via [data-skin="pink"].
+   Bubblegum pink/magenta palette, glossy rounded buttons, heart cursor. */
+
+html[data-skin="pink"] {
+  --bulma-scheme-main: #fff0f7;
+  --bulma-scheme-main-bis: #ffe3f1;
+  --bulma-scheme-main-ter: #ffd6ea;
+  --bulma-body-background-color: #ffe9f4;
+  --bulma-background: #ffe3f1;
+  --bulma-text: #7a2452;
+  --bulma-text-strong: #b3175e;
+  --bulma-text-weak: #c46591;
+  --bulma-link: #ff3d9a;
+  --bulma-link-text: #d6157a;
+  --bulma-primary: #ff4fa3;
+  --bulma-primary-h: 330deg;
+  --bulma-info: #c86bff;
+  --bulma-border: #ffb3d9;
+  --bulma-border-weak: #ffc9e3;
+  --bulma-radius: 14px;
+  --bulma-radius-large: 22px;
+
+  background: radial-gradient(circle at 30% 0%, #ffe0f0 0%, #ffd0ea 45%, #ffbfe4 100%)
+    fixed;
+  color: var(--bulma-text);
+  /* pink heart cursor */
+  cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='28'%3E%3Cpath d='M14 25 C14 25 3 17 3 9 A5 5 0 0 1 14 7 A5 5 0 0 1 25 9 C25 17 14 25 14 25 Z' fill='%23ff5fa2' stroke='%23ffffff' stroke-width='1.5'/%3E%3C/svg%3E")
+      14 12,
+    auto;
+}
+
+html[data-skin="pink"] .title,
+html[data-skin="pink"] strong {
+  color: var(--bulma-text-strong) !important;
+}
+
+html[data-skin="pink"] .navbar.is-dark {
+  background: linear-gradient(90deg, #ff5fa2, #c86bff) !important;
+  box-shadow: 0 2px 10px rgba(255, 95, 162, 0.4);
+}
+
+html[data-skin="pink"] .box,
+html[data-skin="pink"] .card,
+html[data-skin="pink"] .panel,
+html[data-skin="pink"] .modal-card-body,
+html[data-skin="pink"] .editor-view {
+  background-color: rgba(255, 255, 255, 0.82) !important;
+  border: 1px solid #ffb3d9;
+  border-radius: 18px;
+  box-shadow: 0 4px 16px rgba(255, 95, 162, 0.25);
+}
+
+html[data-skin="pink"] .button {
+  border-radius: 999px;
+  border-color: #ff8ac4;
+  color: #b3175e;
+  background: #fff;
+}
+html[data-skin="pink"] .button:hover {
+  background: #ffe3f1;
+  box-shadow: 0 0 10px rgba(255, 95, 162, 0.5);
+}
+html[data-skin="pink"] .button.is-primary {
+  background: linear-gradient(90deg, #ff5fa2, #ff8ac4);
+  border-color: transparent;
+  color: #fff;
+  font-weight: 700;
+}
+
+html[data-skin="pink"] input,
+html[data-skin="pink"] .input,
+html[data-skin="pink"] .textarea,
+html[data-skin="pink"] select {
+  border-radius: 999px;
+  border-color: #ffb3d9 !important;
+  background-color: #fff7fc !important;
+  color: #7a2452 !important;
+}
+
+html[data-skin="pink"] a,
+html[data-skin="pink"] .button,
+html[data-skin="pink"] .navbar-item {
+  cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='28'%3E%3Cpath d='M14 25 C14 25 3 17 3 9 A5 5 0 0 1 14 7 A5 5 0 0 1 25 9 C25 17 14 25 14 25 Z' fill='%23ff2e87' stroke='%23ffffff' stroke-width='1.5'/%3E%3C/svg%3E")
+      14 12,
+    pointer;
+}

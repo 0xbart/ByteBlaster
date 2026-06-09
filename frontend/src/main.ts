@@ -8,6 +8,8 @@ import "@mdi/font/css/materialdesignicons.min.css";
 import "@fortawesome/fontawesome-free/css/all.min.css";
 import "./styles/dark.css";
 import "./styles/party.css";
+import "./styles/cyber.css";
+import "./styles/pink.css";
 
 import App from "./App.vue";
 

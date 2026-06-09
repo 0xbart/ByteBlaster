@@ -1,0 +1,143 @@
+/* Cyber / Matrix skin — layered on top of light/dark via [data-skin="cyber"].
+   Neon green on black, monospace, scanlines, glow, custom crosshair cursor.
+   Panels are semi-transparent so the MatrixRain canvas shows through. */
+
+html[data-skin="cyber"] {
+  --bulma-scheme-main: #000600;
+  --bulma-scheme-main-bis: #03150a;
+  --bulma-scheme-main-ter: #04210f;
+  --bulma-body-background-color: #000600;
+  --bulma-background: #03150a;
+  --bulma-text: #4dff88;
+  --bulma-text-strong: #9bffc4;
+  --bulma-text-weak: #2fbf66;
+  --bulma-text-light: #2fbf66;
+  --bulma-link: #58ffa6;
+  --bulma-link-text: #58ffa6;
+  --bulma-primary: #00ff66;
+  --bulma-primary-h: 146deg;
+  --bulma-info: #00e0ff;
+  --bulma-border: #0c5a2c;
+  --bulma-border-weak: #0c5a2c;
+  --bulma-scheme-h: 146;
+  --bulma-scheme-s: 100%;
+  --bulma-family-primary: "Courier New", "DejaVu Sans Mono", monospace;
+
+  background-color: #000600;
+  color: var(--bulma-text);
+  font-family: var(--bulma-family-primary);
+  /* green crosshair cursor */
+  cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg stroke='%2300ff66' stroke-width='2' fill='none'%3E%3Ccircle cx='12' cy='12' r='7'/%3E%3Cline x1='12' y1='0' x2='12' y2='5'/%3E%3Cline x1='12' y1='19' x2='12' y2='24'/%3E%3Cline x1='0' y1='12' x2='5' y2='12'/%3E%3Cline x1='19' y1='12' x2='24' y2='12'/%3E%3C/g%3E%3C/svg%3E")
+      12 12,
+    crosshair;
+}
+
+/* Everything monospace + green, with a faint text glow. */
+html[data-skin="cyber"] body,
+html[data-skin="cyber"] .title,
+html[data-skin="cyber"] .subtitle,
+html[data-skin="cyber"] button,
+html[data-skin="cyber"] input,
+html[data-skin="cyber"] .button {
+  font-family: var(--bulma-family-primary);
+}
+html[data-skin="cyber"] .title,
+html[data-skin="cyber"] strong,
+html[data-skin="cyber"] .has-text-white {
+  color: var(--bulma-text-strong) !important;
+  text-shadow: 0 0 6px rgba(0, 255, 102, 0.55);
+}
+
+/* Semi-transparent surfaces so the rain peeks through. */
+html[data-skin="cyber"] .box,
+html[data-skin="cyber"] .card,
+html[data-skin="cyber"] .panel,
+html[data-skin="cyber"] .modal-card-body,
+html[data-skin="cyber"] .editor-view,
+html[data-skin="cyber"] .board-layout > * {
+  background-color: rgba(0, 12, 4, 0.78) !important;
+  border: 1px solid #0c5a2c;
+  box-shadow: 0 0 12px rgba(0, 255, 102, 0.18);
+  backdrop-filter: blur(1px);
+}
+
+html[data-skin="cyber"] .navbar.is-dark {
+  background-color: rgba(0, 10, 4, 0.92) !important;
+  border-bottom: 1px solid #0c5a2c;
+  box-shadow: 0 0 12px rgba(0, 255, 102, 0.25);
+}
+
+/* Buttons → terminal style. */
+html[data-skin="cyber"] .button {
+  background-color: rgba(0, 30, 12, 0.85);
+  border-color: #00ff66;
+  color: #7dffb0;
+}
+html[data-skin="cyber"] .button:hover {
+  background-color: rgba(0, 60, 24, 0.95);
+  color: #d6ffe6;
+  box-shadow: 0 0 10px rgba(0, 255, 102, 0.5);
+}
+html[data-skin="cyber"] .button.is-primary {
+  background-color: #00b347;
+  color: #001a08;
+  font-weight: 700;
+}
+
+html[data-skin="cyber"] input,
+html[data-skin="cyber"] .input,
+html[data-skin="cyber"] .textarea,
+html[data-skin="cyber"] select {
+  background-color: rgba(0, 20, 8, 0.9) !important;
+  border-color: #0c5a2c !important;
+  color: #7dffb0 !important;
+}
+
+/* Scanline overlay across the whole viewport. */
+html[data-skin="cyber"] body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9998;
+  background: repeating-linear-gradient(
+    to bottom,
+    rgba(0, 255, 102, 0.05) 0px,
+    rgba(0, 255, 102, 0.05) 1px,
+    transparent 2px,
+    transparent 4px
+  );
+  mix-blend-mode: screen;
+}
+
+/* Floating hackertyper glyphs (spawned on keypress by useHackerTyper). */
+.hacker-glyph {
+  position: fixed;
+  z-index: 9999;
+  pointer-events: none;
+  color: #00ff66;
+  font-family: "Courier New", monospace;
+  font-weight: 700;
+  font-size: 1rem;
+  text-shadow: 0 0 8px rgba(0, 255, 102, 0.9);
+  animation: hacker-float 1s ease-out forwards;
+}
+@keyframes hacker-float {
+  0% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-40px) scale(1.4);
+  }
+}
+
+/* Keep links/cursor consistent on interactive bits. */
+html[data-skin="cyber"] a,
+html[data-skin="cyber"] .button,
+html[data-skin="cyber"] .navbar-item {
+  cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg stroke='%2300ff66' stroke-width='2' fill='none'%3E%3Ccircle cx='12' cy='12' r='5'/%3E%3Cline x1='12' y1='0' x2='12' y2='5'/%3E%3Cline x1='12' y1='19' x2='12' y2='24'/%3E%3Cline x1='0' y1='12' x2='5' y2='12'/%3E%3Cline x1='19' y1='12' x2='24' y2='12'/%3E%3C/g%3E%3C/svg%3E")
+      12 12,
+    pointer;
+}
