@@ -28,8 +28,19 @@ export const useEditorStore = defineStore("editor", () => {
     startSec.value = 0;
     endSec.value = 0;
   }
+  // External source where the browser can't fetch the raw URL directly (CORS),
+  // so the waveform loads from a same-origin proxy while trim uses the real URL.
+  function loadExternal(url: string, audioUrl: string, title: string): void {
+    soundId.value = null;
+    sourceUrl.value = url;
+    sourceAudioUrl.value = audioUrl;
+    sourceTitle.value = title;
+    startSec.value = 0;
+    endSec.value = 0;
+  }
   function queueFromExplore(url: string, title: string): void {
-    pending.value = { url, audioUrl: url, title };
+    const audioUrl = `/api/explore/proxy?url=${encodeURIComponent(url)}`;
+    pending.value = { url, audioUrl, title };
   }
   function consumePending(): { url?: string; soundId?: number; audioUrl: string; title: string } | null {
     const p = pending.value;
@@ -63,6 +74,7 @@ export const useEditorStore = defineStore("editor", () => {
     pending,
     loadSound,
     loadUrl,
+    loadExternal,
     queueFromExplore,
     consumePending,
     setRegion,

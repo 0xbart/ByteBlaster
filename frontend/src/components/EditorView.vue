@@ -280,7 +280,8 @@ onMounted(() => {
     if (pending.soundId !== undefined) {
       editor.loadSound(pending.soundId, pending.title, pending.audioUrl);
     } else if (pending.url) {
-      editor.loadUrl(pending.url, pending.title);
+      // audioUrl is a same-origin proxy (CORS-safe for the waveform fetch).
+      editor.loadExternal(pending.url, pending.audioUrl, pending.title);
     }
     displayName.value = pending.title;
   }
@@ -288,6 +289,9 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   destroySurfer();
+  // Leaving the editor drops the loaded source so "Loaded: …" doesn't persist
+  // when the (local) picker state has already reset.
+  editor.clear();
 });
 
 // flush:"post" → the v-if waveform container is in the DOM before we

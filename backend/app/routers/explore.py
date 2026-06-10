@@ -10,7 +10,7 @@ from typing import Annotated, Any
 import httpx
 from bs4 import BeautifulSoup
 from fastapi import APIRouter, HTTPException, Query, status
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, StreamingResponse
 
 from ..deps import CurrentUser, SettingsDep
 from ..schemas import ExploreResult, ExploreSearchOut, YoutubeFetchIn, YoutubeFetchOut
@@ -151,6 +151,67 @@ async def search_explore(
     out = _parse_results(resp.text, q_clean, page)
     _cache_set(key, out)
     return out
+
+
+# ---------------------------------------------------------------------------
+# Same-origin proxy for myinstants mp3s. The browser audio editor (wavesurfer)
+# fetch()es the file to draw a waveform, which CORS blocks on the myinstants
+# CDN. We stream it through here so it's same-origin. SSRF-guarded to the
+# myinstants host only; trim itself still fetches the real URL server-side.
+# ---------------------------------------------------------------------------
+
+
+def _is_myinstants_mp3(url: str) -> bool:
+    from urllib.parse import urlparse
+
+    try:
+        p = urlparse(url)
+    except ValueError:
+        return False
+    host = (p.hostname or "").lower()
+    return (
+        p.scheme == "https"
+        and (host == "myinstants.com" or host.endswith(".myinstants.com"))
+        and p.path.lower().endswith(".mp3")
+    )
+
+
+@router.get("/proxy")
+async def proxy_mp3(
+    _: CurrentUser,
+    url: Annotated[str, Query(min_length=8, max_length=512)],
+) -> StreamingResponse:
+    if not _is_myinstants_mp3(url):
+        raise HTTPException(status_code=400, detail="Only myinstants mp3 URLs are allowed.")
+
+    client = httpx.AsyncClient(timeout=15.0, headers={"User-Agent": _UA})
+    try:
+        req = client.build_request("GET", url)
+        upstream = await client.send(req, stream=True)
+    except httpx.HTTPError as exc:
+        await client.aclose()
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail=f"Fetch failed: {exc.__class__.__name__}",
+        ) from exc
+
+    if upstream.status_code != 200:
+        await upstream.aclose()
+        await client.aclose()
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail=f"Upstream returned HTTP {upstream.status_code}.",
+        )
+
+    async def _stream() -> Any:
+        try:
+            async for chunk in upstream.aiter_bytes():
+                yield chunk
+        finally:
+            await upstream.aclose()
+            await client.aclose()
+
+    return StreamingResponse(_stream(), media_type="audio/mpeg")
 
 
 # ---------------------------------------------------------------------------
