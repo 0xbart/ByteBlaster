@@ -5,7 +5,7 @@ export type ThemeMode = "light" | "dark";
 // Skins layer ON TOP of light/dark. "default" keeps the light/dark toggle and
 // the untouched Bulma look; "cyber"/"pink" are full standalone looks scoped to
 // [data-skin="..."] (see styles/cyber.css, styles/pink.css).
-export type Skin = "default" | "cyber" | "pink";
+export type Skin = "default" | "cyber" | "pink" | "government" | "money";
 
 const STORAGE_KEY = "byteblaster:theme";
 const SKIN_KEY = "byteblaster:skin";
@@ -19,7 +19,14 @@ function detectInitial(): ThemeMode {
 
 function detectInitialSkin(): Skin {
   const stored = localStorage.getItem(SKIN_KEY);
-  if (stored === "cyber" || stored === "pink" || stored === "default") return stored;
+  if (
+    stored === "cyber" ||
+    stored === "pink" ||
+    stored === "government" ||
+    stored === "money" ||
+    stored === "default"
+  )
+    return stored;
   return "default";
 }
 

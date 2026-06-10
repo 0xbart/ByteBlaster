@@ -1,0 +1,146 @@
+/* Government skin — layered on top of light/dark via [data-skin="government"].
+   Parody of slow bureaucracy / classified paperwork: manilla paper, serif ink,
+   square corners, official-red stamp accents, redacted black bars, pen cursor.
+   Panels are opaque "paper" so the StampRain (falling stamps) reads behind. */
+
+html[data-skin="government"] {
+  --bulma-scheme-main: #e8dcc0;
+  --bulma-scheme-main-bis: #ddcfac;
+  --bulma-scheme-main-ter: #d2c39b;
+  --bulma-body-background-color: #d8c9a3;
+  --bulma-background: #ddcfac;
+  --bulma-text: #1a1a1a;
+  --bulma-text-strong: #111111;
+  --bulma-text-weak: #4a463c;
+  --bulma-text-light: #4a463c;
+  --bulma-link: #7a1f1f;
+  --bulma-link-text: #7a1f1f;
+  --bulma-primary: #a01818;
+  --bulma-primary-h: 0deg;
+  --bulma-info: #6b5a36;
+  --bulma-border: #1a1a1a;
+  --bulma-border-weak: #8a7f63;
+  --bulma-radius: 0;
+  --bulma-radius-small: 0;
+  --bulma-radius-large: 0;
+  --bulma-family-primary: "Georgia", "Times New Roman", serif;
+
+  background-color: #d8c9a3;
+  /* subtle paper grid / form lines */
+  background-image:
+    repeating-linear-gradient(
+      to bottom,
+      transparent 0,
+      transparent 27px,
+      rgba(90, 60, 30, 0.07) 28px
+    );
+  color: var(--bulma-text);
+  font-family: var(--bulma-family-primary);
+  /* pen / fountain-pen cursor */
+  cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='28'%3E%3Cg fill='none' stroke='%234a3a26' stroke-width='2'%3E%3Cpath d='M4 24 L7 17 L20 4 L24 8 L11 21 Z' fill='%234a3a26'/%3E%3Cpath d='M4 24 L7 17' stroke='%23111'/%3E%3C/g%3E%3C/svg%3E")
+      3 25,
+    auto;
+}
+
+html[data-skin="government"] body,
+html[data-skin="government"] .title,
+html[data-skin="government"] .subtitle,
+html[data-skin="government"] button,
+html[data-skin="government"] input,
+html[data-skin="government"] .button {
+  font-family: var(--bulma-family-primary);
+}
+
+html[data-skin="government"] .title,
+html[data-skin="government"] strong,
+html[data-skin="government"] .has-text-white {
+  color: var(--bulma-text-strong) !important;
+  letter-spacing: 0.02em;
+}
+
+html[data-skin="government"] .navbar.is-dark {
+  background: #3b352b !important;
+  border-bottom: 3px double #111;
+}
+
+/* Surfaces look like stamped official paper. */
+html[data-skin="government"] .box,
+html[data-skin="government"] .card,
+html[data-skin="government"] .panel,
+html[data-skin="government"] .modal-card-body,
+html[data-skin="government"] .editor-view,
+html[data-skin="government"] .board-layout > * {
+  background-color: #f0e8d2 !important;
+  border: 1px solid #1a1a1a;
+  border-radius: 0 !important;
+  box-shadow: 3px 3px 0 rgba(26, 26, 26, 0.25);
+}
+
+/* Buttons → rubber-stamp / form-button look. */
+html[data-skin="government"] .button {
+  border: 2px solid #111;
+  border-radius: 0;
+  color: #111;
+  background: #ece2c8;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 700;
+}
+html[data-skin="government"] .button:hover {
+  background: #ddcfac;
+}
+html[data-skin="government"] .button.is-primary {
+  background: transparent;
+  border: 3px solid #a01818;
+  color: #a01818;
+  transform: rotate(-1.5deg);
+}
+
+html[data-skin="government"] input,
+html[data-skin="government"] .input,
+html[data-skin="government"] .textarea,
+html[data-skin="government"] select {
+  background-color: #f7f0dd !important;
+  border: 1px solid #1a1a1a !important;
+  border-radius: 0 !important;
+  color: #1a1a1a !important;
+}
+
+html[data-skin="government"] a,
+html[data-skin="government"] .button,
+html[data-skin="government"] .navbar-item {
+  cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='28'%3E%3Cg fill='none' stroke='%23a01818' stroke-width='2'%3E%3Cpath d='M4 24 L7 17 L20 4 L24 8 L11 21 Z' fill='%23a01818'/%3E%3C/g%3E%3C/svg%3E")
+      3 25,
+    pointer;
+}
+
+/* Floating bureaucratic stamps (spawned on keypress by useFloatingTyper). */
+.gov-glyph {
+  position: fixed;
+  z-index: 9999;
+  pointer-events: none;
+  color: #a01818;
+  font-family: "Georgia", serif;
+  font-weight: 700;
+  font-size: 1rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  border: 2px solid #a01818;
+  padding: 1px 5px;
+  border-radius: 2px;
+  animation: gov-stamp 1.1s ease-out forwards;
+}
+@keyframes gov-stamp {
+  0% {
+    opacity: 0;
+    transform: scale(1.8) rotate(-12deg);
+  }
+  20% {
+    opacity: 1;
+    transform: scale(1) rotate(-12deg);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1) rotate(-12deg) translateY(-24px);
+  }
+}

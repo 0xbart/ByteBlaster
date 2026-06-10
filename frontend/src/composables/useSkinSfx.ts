@@ -17,27 +17,62 @@ function getCtx(): AudioContext | null {
   return ctx;
 }
 
-export function useSkinSfx(): { glitch: () => void } {
+// One short tone helper shared by the effects below.
+function blip(
+  ac: AudioContext,
+  type: OscillatorType,
+  freqStart: number,
+  freqEnd: number,
+  at: number,
+  dur: number,
+  peak = 0.12,
+): void {
+  const osc = ac.createOscillator();
+  const gain = ac.createGain();
+  osc.type = type;
+  osc.frequency.setValueAtTime(freqStart, at);
+  osc.frequency.exponentialRampToValueAtTime(freqEnd, at + dur);
+  gain.gain.setValueAtTime(0.0001, at);
+  gain.gain.exponentialRampToValueAtTime(peak, at + 0.01);
+  gain.gain.exponentialRampToValueAtTime(0.0001, at + dur);
+  osc.connect(gain).connect(ac.destination);
+  osc.start(at);
+  osc.stop(at + dur + 0.02);
+}
+
+export function useSkinSfx(): {
+  glitch: () => void;
+  cashRegister: () => void;
+  stamp: () => void;
+} {
   function glitch(): void {
     const ac = getCtx();
     if (!ac) return;
     void ac.resume?.();
     const now = ac.currentTime;
-
-    const osc = ac.createOscillator();
-    const gain = ac.createGain();
-    osc.type = "square";
     // Downward sweep — short, retro "boop".
-    osc.frequency.setValueAtTime(880, now);
-    osc.frequency.exponentialRampToValueAtTime(140, now + 0.18);
-    gain.gain.setValueAtTime(0.0001, now);
-    gain.gain.exponentialRampToValueAtTime(0.12, now + 0.01);
-    gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.2);
-
-    osc.connect(gain).connect(ac.destination);
-    osc.start(now);
-    osc.stop(now + 0.22);
+    blip(ac, "square", 880, 140, now, 0.18);
   }
 
-  return { glitch };
+  function cashRegister(): void {
+    const ac = getCtx();
+    if (!ac) return;
+    void ac.resume?.();
+    const now = ac.currentTime;
+    // "Ka-ching": two bright bell-like notes + sparkle tail.
+    blip(ac, "triangle", 1320, 1300, now, 0.1, 0.14);
+    blip(ac, "triangle", 1760, 1740, now + 0.09, 0.18, 0.14);
+    blip(ac, "sine", 2640, 3200, now + 0.16, 0.12, 0.06);
+  }
+
+  function stamp(): void {
+    const ac = getCtx();
+    if (!ac) return;
+    void ac.resume?.();
+    const now = ac.currentTime;
+    // Low dull "thud" of a rubber stamp hitting paper.
+    blip(ac, "sine", 220, 60, now, 0.12, 0.2);
+  }
+
+  return { glitch, cashRegister, stamp };
 }

@@ -268,7 +268,7 @@ class WsStopAllEvent(BaseModel):
 # Theme override pushed by a superadmin to a single target user. mode = Bulma
 # light/dark; skin = standalone look layered on top (see frontend theme store).
 ThemeMode = Literal["light", "dark"]
-ThemeSkin = Literal["default", "cyber", "pink"]
+ThemeSkin = Literal["default", "cyber", "pink", "government", "money"]
 
 
 class WsSetThemeIn(BaseModel):

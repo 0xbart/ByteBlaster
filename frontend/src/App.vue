@@ -1,7 +1,12 @@
 <template>
   <div class="app-shell">
     <MatrixRain v-if="theme.skin === 'cyber'" />
+    <MoneyRain v-if="theme.skin === 'money'" />
+    <StampRain v-if="theme.skin === 'government'" />
+    <MoneyHud v-if="theme.skin === 'money'" />
     <AccessGrantedOverlay />
+    <MoneyBootOverlay />
+    <GovBootOverlay />
     <nav class="navbar is-dark">
       <div class="navbar-brand">
         <a
@@ -216,8 +221,14 @@ import ExploreView from "./components/ExploreView.vue";
 import EditorView from "./components/EditorView.vue";
 import ProfileView from "./components/ProfileView.vue";
 import MatrixRain from "./components/MatrixRain.vue";
+import MoneyRain from "./components/MoneyRain.vue";
+import StampRain from "./components/StampRain.vue";
+import MoneyHud from "./components/MoneyHud.vue";
 import AccessGrantedOverlay from "./components/AccessGrantedOverlay.vue";
+import MoneyBootOverlay from "./components/MoneyBootOverlay.vue";
+import GovBootOverlay from "./components/GovBootOverlay.vue";
 import { useHackerTyper } from "./composables/useHackerTyper";
+import { useFloatingTyper } from "./composables/useFloatingTyper";
 import { useEditorStore } from "./stores/editor";
 import TrendingPanel from "./components/TrendingPanel.vue";
 import ActiveUsersPanel from "./components/ActiveUsersPanel.vue";
@@ -251,6 +262,12 @@ watch(() => editorStore.pending, (p) => {
 const presence = usePresenceStore();
 const theme = useThemeStore();
 useHackerTyper();
+useFloatingTyper("money", ["+$1,000", "💰", "💵", "$", "€", "ka-ching", "$$$"], "money-glyph");
+useFloatingTyper(
+  "government",
+  ["[REDACTED]", "APPROVED", "DENIED", "§", "¶", "Form 27B/6", "VOID"],
+  "gov-glyph",
+);
 const audio = useAudioStore();
 const soundsStore = useSoundsStore();
 const { me, loaded, needsClaim, isAdmin, isSuperadmin, isMutemaster, serverDown } = storeToRefs(userStore);

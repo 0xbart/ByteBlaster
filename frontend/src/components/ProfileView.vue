@@ -91,11 +91,15 @@ const skins: { value: Skin; label: string; desc: string }[] = [
   { value: "default", label: "Default", desc: "Clean light / dark" },
   { value: "cyber", label: "Cyber", desc: "Matrix hacker mode" },
   { value: "pink", label: "Pink", desc: "Bubblegum dream" },
+  { value: "money", label: "Money", desc: "Cash mode — make it rain" },
+  { value: "government", label: "Government", desc: "Bureaucracy / classified" },
 ];
 
 function pick(s: Skin): void {
   theme.setSkin(s);
-  sfx.glitch();
+  if (s === "money") sfx.cashRegister();
+  else if (s === "government") sfx.stamp();
+  else sfx.glitch();
 }
 
 function formatDate(iso: string): string {
@@ -189,6 +193,16 @@ onMounted(async () => {
 }
 .skin-card.pink {
   background: linear-gradient(135deg, #ff5fa2, #c86bff);
+}
+.skin-card.money {
+  background: linear-gradient(135deg, #0b3d2e, #ffd700);
+  color: #08301f;
+  font-family: "Georgia", serif;
+}
+.skin-card.government {
+  background: linear-gradient(135deg, #d8c9a3, #1a1a1a);
+  color: #f0e8d2;
+  font-family: "Georgia", serif;
 }
 .skin-name {
   font-weight: 700;
