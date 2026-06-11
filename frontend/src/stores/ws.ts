@@ -27,5 +27,10 @@ export const useWsStore = defineStore("ws", () => {
     );
   }
 
-  return { register, setUserTheme };
+  // React to a recent play; backend ignores it outside the voting window.
+  function sendVote(playId: number, direction: "up" | "down"): boolean {
+    return sender.value?.({ type: "vote", play_id: playId, direction }) ?? false;
+  }
+
+  return { register, setUserTheme, sendVote };
 });

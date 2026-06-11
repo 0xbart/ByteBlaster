@@ -12,7 +12,8 @@ from ..config import Settings, get_settings
 from ..db import get_session
 from ..deps import client_ip
 from ..models import User
-from ..schemas import WsSetThemeIn, WsThemeSetEvent
+from ..schemas import WsSetThemeIn, WsThemeSetEvent, WsVoteIn
+from ..services import votes
 from .manager import WsClient, manager
 
 router = APIRouter()
@@ -86,6 +87,16 @@ async def ws_endpoint(
                     req.target_user_id,
                     WsThemeSetEvent(mode=req.mode, skin=req.skin, by=user.username),
                 )
+            elif mtype == "vote":
+                try:
+                    vote = WsVoteIn.model_validate(msg)
+                except ValidationError:
+                    continue
+                event = await votes.record_vote(
+                    vote.play_id, user.id, user.username, vote.direction
+                )
+                if event is not None:
+                    await manager.broadcast(event)
     except WebSocketDisconnect:
         pass
     finally:

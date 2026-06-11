@@ -78,6 +78,7 @@ async def play_sound(
     out = _to_out(play)
     await manager.broadcast(
         WsPlayEvent(
+            play_id=play.id,
             sound_id=sound.id,
             sound_url=f"/api/sounds/{sound.id}/file",
             display_name=sound.display_name,
@@ -85,6 +86,9 @@ async def play_sound(
             at=play.played_at,
         )
     )
+    from ..services import votes
+
+    votes.register_play(play.id)
     return out
 
 

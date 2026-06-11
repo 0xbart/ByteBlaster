@@ -12,11 +12,14 @@ import { celebrate } from "./useConfetti";
 import { usePresenceStore, type PresenceUser } from "@/stores/presence";
 import { useThemeStore } from "@/stores/theme";
 import { useWsStore } from "@/stores/ws";
+import { useVotesStore, type VoteVoter } from "@/stores/votes";
+import { floatVote } from "./useVoteGlyph";
 import { useAudioPlayer } from "./useAudioPlayer";
 import type { PlayOut, SoundOut } from "@/api";
 
 type WsEvent =
-  | { type: "play"; sound_id: number; sound_url: string; display_name: string; by: string; at: string }
+  | { type: "play"; play_id: number; sound_id: number; sound_url: string; display_name: string; by: string; at: string }
+  | { type: "vote"; play_id: number; by: string; direction: "up" | "down"; up: number; down: number; voters: VoteVoter[]; at: string }
   | { type: "sound_added"; sound: SoundOut; by: string }
   | { type: "sound_updated"; sound: SoundOut; by: string }
   | { type: "sound_removed"; sound_id: number; display_name: string; by: string }
@@ -45,6 +48,7 @@ export function useWebSocket() {
   const presence = usePresenceStore();
   const theme = useThemeStore();
   const wsStore = useWsStore();
+  const votes = useVotesStore();
   const audio = useAudioPlayer();
 
   const connected = ref(false);
@@ -64,7 +68,7 @@ export function useWebSocket() {
         // The full PlayOut isn't sent over WS to keep payload small; build a
         // shim entry for the history panel. The next /plays refresh re-syncs.
         history.prependPlay({
-          id: 0,
+          id: ev.play_id,
           sound_id: ev.sound_id,
           sound_display_name: ev.display_name,
           played_by_user_id: 0,
@@ -72,7 +76,12 @@ export function useWebSocket() {
           played_at: ev.at,
         } satisfies PlayOut);
         stats.bump(ev.sound_id, ev.display_name, ev.by);
+        votes.openPopup(ev.play_id, ev.display_name);
         if (party.active) celebrate();
+        break;
+      case "vote":
+        votes.applyVote(ev);
+        floatVote(ev.direction, ev.by);
         break;
       case "sound_added":
         sounds.upsert(ev.sound);

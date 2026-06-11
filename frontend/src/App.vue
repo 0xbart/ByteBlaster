@@ -203,6 +203,7 @@
     </main>
 
     <PresenceDialog v-if="presenceOpen" @close="presenceOpen = false" />
+    <VotePopup />
   </div>
 </template>
 
@@ -234,6 +235,7 @@ import TrendingPanel from "./components/TrendingPanel.vue";
 import ActiveUsersPanel from "./components/ActiveUsersPanel.vue";
 import AdminPanel from "./components/AdminPanel.vue";
 import PresenceDialog from "./components/PresenceDialog.vue";
+import VotePopup from "./components/VotePopup.vue";
 import { useUserStore } from "./stores/user";
 import { useCategoriesStore } from "./stores/categories";
 import { useTagsStore } from "./stores/tags";
@@ -245,6 +247,7 @@ import { usePresenceStore } from "./stores/presence";
 import { useThemeStore } from "./stores/theme";
 import { useAudioStore } from "./stores/audio";
 import { useSoundsStore } from "./stores/sounds";
+import { useVotesStore } from "./stores/votes";
 import { useWebSocket } from "./composables/useWebSocket";
 import { useAudioPlayer } from "./composables/useAudioPlayer";
 
@@ -270,6 +273,7 @@ useFloatingTyper(
 );
 const audio = useAudioStore();
 const soundsStore = useSoundsStore();
+const votes = useVotesStore();
 const { me, loaded, needsClaim, isAdmin, isSuperadmin, isMutemaster, serverDown } = storeToRefs(userStore);
 
 function retryConnect(): void {
@@ -354,12 +358,19 @@ onBeforeUnmount(() => {
 
 function onGlobalKey(ev: KeyboardEvent): void {
   const k = ev.key.toLowerCase();
-  if (k !== "m" && k !== "k") return;
+  if (k !== "m" && k !== "k" && k !== "u" && k !== "d") return;
   if (ev.ctrlKey || ev.metaKey || ev.altKey) return;
   const t = ev.target as HTMLElement | null;
   if (t) {
     const tag = t.tagName;
     if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || t.isContentEditable) return;
+  }
+  if (k === "u" || k === "d") {
+    // Only meaningful while a vote popup is open; otherwise let the key pass.
+    if (!votes.popup) return;
+    ev.preventDefault();
+    votes.vote(k === "u" ? "up" : "down");
+    return;
   }
   ev.preventDefault();
   if (k === "m") {

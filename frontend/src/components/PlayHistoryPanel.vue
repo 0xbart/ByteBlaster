@@ -14,6 +14,14 @@
             />
             <strong class="play-user">{{ it.username }}</strong>
             <em class="play-name">{{ it.soundName }}</em>
+            <span
+              v-if="voteTally(it.playId)"
+              class="vote-tally is-size-7"
+              :title="voterTitle(it.playId)"
+            >
+              <span v-if="voteTally(it.playId)!.up" class="vote-tally__up">👍{{ voteTally(it.playId)!.up }}</span>
+              <span v-if="voteTally(it.playId)!.down" class="vote-tally__down">👎{{ voteTally(it.playId)!.down }}</span>
+            </span>
             <span class="play-time has-text-grey is-size-7">{{ relativeTime(it.at) }}</span>
           </template>
           <template v-else-if="it.kind === 'join'">
@@ -69,9 +77,26 @@
 import { onMounted, onBeforeUnmount, ref } from "vue";
 import { useHistoryStore } from "@/stores/history";
 import { useSoundsStore } from "@/stores/sounds";
+import { useVotesStore, type VoteTally } from "@/stores/votes";
 
 const history = useHistoryStore();
 const sounds = useSoundsStore();
+const votes = useVotesStore();
+
+function voteTally(playId: number): VoteTally | null {
+  return votes.tally(playId);
+}
+
+function voterTitle(playId: number): string {
+  const t = votes.tally(playId);
+  if (!t) return "";
+  const up = t.voters.filter((v) => v.direction === "up").map((v) => v.username);
+  const down = t.voters.filter((v) => v.direction === "down").map((v) => v.username);
+  const parts: string[] = [];
+  if (up.length) parts.push(`👍 ${up.join(", ")}`);
+  if (down.length) parts.push(`👎 ${down.join(", ")}`);
+  return parts.join("  ·  ");
+}
 const now = ref(Date.now());
 let ticker: number | null = null;
 
@@ -133,6 +158,19 @@ function relativeTime(iso: string): string {
 }
 .play-icon--clickable {
   cursor: pointer;
+}
+.vote-tally {
+  flex: 0 0 auto;
+  display: inline-flex;
+  gap: 0.3rem;
+  white-space: nowrap;
+  cursor: default;
+}
+.vote-tally__up {
+  color: #2e9e5b;
+}
+.vote-tally__down {
+  color: #d14;
 }
 .play-time {
   flex: 0 0 auto;

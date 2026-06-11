@@ -199,10 +199,35 @@ class PlayOut(BaseModel):
 
 class WsPlayEvent(BaseModel):
     type: Literal["play"] = "play"
+    play_id: int
     sound_id: int
     sound_url: str
     display_name: str
     by: str
+    at: datetime
+
+
+class WsVoteIn(BaseModel):
+    """Client → server: react to a recent play."""
+
+    type: Literal["vote"]
+    play_id: int
+    direction: Literal["up", "down"]
+
+
+class VoteVoter(BaseModel):
+    username: str
+    direction: Literal["up", "down"]
+
+
+class WsVoteEvent(BaseModel):
+    type: Literal["vote"] = "vote"
+    play_id: int
+    by: str  # who just voted (drives the floating glyph)
+    direction: Literal["up", "down"]
+    up: int
+    down: int
+    voters: list[VoteVoter]  # full current tally (feed tooltip + popup)
     at: datetime
 
 
