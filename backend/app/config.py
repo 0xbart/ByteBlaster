@@ -12,6 +12,9 @@ class Settings(BaseSettings):
 
     database_url: str = "postgresql+asyncpg://byteblaster:byteblaster@localhost:5432/byteblaster"
     storage_dir: Path = Path("/data/sounds")
+    # Read-only local library bind-mounted from the host `./sounds` folder.
+    # Top-level subfolders act as categories; browsed via the Explore "Local" tab.
+    local_sounds_dir: Path = Path("/sounds")
     max_upload_bytes: int = 10 * 1024 * 1024  # 10 MB
 
     # CORS origins for dev (vite). Comma-separated env var.

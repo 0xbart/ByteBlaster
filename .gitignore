@@ -77,7 +77,12 @@ backups/
 # Local data / uploads
 # =====================================================================
 data/
-sounds/
+# Local sound library (Explore → Local tab). Bind-mounted read-only into the
+# backend; the user drops <Category>/<name>.mp3 folders here. Ignore the audio
+# but keep the folder + docs tracked so the mount target exists.
+sounds/*
+!sounds/.gitkeep
+!sounds/README.md
 # Sample / scratch audio at repo root (real uploads live in the Docker
 # volume `sounddata_dev`, not the repo).
 /*.mp3

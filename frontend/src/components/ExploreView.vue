@@ -86,6 +86,9 @@
     <b-tab-item label="YouTube" value="youtube" icon="video" pack="fas">
       <ExploreYoutube />
     </b-tab-item>
+    <b-tab-item label="Local" value="local" icon="folder" pack="fas">
+      <ExploreLocal />
+    </b-tab-item>
     </b-tabs>
   </div>
 </template>
@@ -94,6 +97,7 @@
 import { ref } from "vue";
 import UploadDialog from "./UploadDialog.vue";
 import ExploreYoutube from "./ExploreYoutube.vue";
+import ExploreLocal from "./ExploreLocal.vue";
 import { useExploreStore } from "@/stores/explore";
 import { useEditorStore } from "@/stores/editor";
 import { useAudioPlayer } from "@/composables/useAudioPlayer";
@@ -104,7 +108,7 @@ const editorStore = useEditorStore();
 const audio = useAudioPlayer();
 const q = ref(explore.query);
 const addDialog = ref<ExploreResult | null>(null);
-const activeTab = ref<"myinstants" | "youtube">("myinstants");
+const activeTab = ref<"myinstants" | "youtube" | "local">("myinstants");
 
 function onSearch(): void {
   const v = q.value.trim();

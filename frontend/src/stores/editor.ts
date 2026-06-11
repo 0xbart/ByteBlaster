@@ -42,6 +42,12 @@ export const useEditorStore = defineStore("editor", () => {
     const audioUrl = `/api/explore/proxy?url=${encodeURIComponent(url)}`;
     pending.value = { url, audioUrl, title };
   }
+  // Local-library file: same-origin, so the browser can fetch the real URL
+  // directly (no proxy). Trim uses the same URL; the backend resolves it to
+  // disk via the /api/explore/local/file?rel=… branch.
+  function queueLocal(url: string, title: string): void {
+    pending.value = { url, audioUrl: url, title };
+  }
   function consumePending(): { url?: string; soundId?: number; audioUrl: string; title: string } | null {
     const p = pending.value;
     pending.value = null;
@@ -76,6 +82,7 @@ export const useEditorStore = defineStore("editor", () => {
     loadUrl,
     loadExternal,
     queueFromExplore,
+    queueLocal,
     consumePending,
     setRegion,
     setDuration,

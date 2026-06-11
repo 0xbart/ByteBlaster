@@ -91,3 +91,64 @@ def resolve_path(file_path: str, settings: Settings) -> Path:
     if not p.is_file():
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
     return p
+
+
+# Local library files are mp3/wav; map extension -> canonical mime.
+LOCAL_EXT_MIME = {".mp3": "audio/mpeg", ".wav": "audio/wav"}
+
+
+def resolve_local_path(rel: str, settings: Settings) -> Path:
+    """Resolve a client-supplied relative path inside local_sounds_dir.
+
+    The ONLY sanctioned way to turn an untrusted `rel` into a disk path:
+    blocks traversal, enforces mp3/wav, requires an existing file.
+    """
+    base = settings.local_sounds_dir.resolve()
+    p = (base / rel).resolve()
+    if base not in p.parents:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+    if p.suffix.lower() not in LOCAL_EXT_MIME:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+    if not p.is_file():
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+    return p
+
+
+def store_local_copy(src: Path, settings: Settings) -> StoredFile:
+    """Copy a resolved local-library file into storage_dir (sha256-named).
+
+    Same on-disk contract as save_upload/download_url so callers stay thin.
+    The source folder is read-only; we never write back to it.
+    """
+    ext = src.suffix.lower()
+    mime = LOCAL_EXT_MIME[ext]
+    settings.storage_dir.mkdir(parents=True, exist_ok=True)
+
+    hasher = hashlib.sha256()
+    size = 0
+    tmp = settings.storage_dir / f".incoming-local-{id(src)}.part"
+    try:
+        with src.open("rb") as fin, tmp.open("wb") as out:
+            while chunk := fin.read(CHUNK):
+                size += len(chunk)
+                if size > settings.max_upload_bytes:
+                    raise HTTPException(
+                        status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+                        detail=f"File too large (>{settings.max_upload_bytes} bytes).",
+                    )
+                hasher.update(chunk)
+                out.write(chunk)
+        digest = hasher.hexdigest()
+        final = settings.storage_dir / f"{digest}{ext}"
+        if final.exists():
+            tmp.unlink(missing_ok=True)
+        else:
+            tmp.rename(final)
+    except HTTPException:
+        tmp.unlink(missing_ok=True)
+        raise
+    except Exception:
+        tmp.unlink(missing_ok=True)
+        raise
+
+    return StoredFile(path=final, mime=mime, size=size, duration_ms=probe_duration_ms(final))

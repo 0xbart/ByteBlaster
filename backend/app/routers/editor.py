@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+from urllib.parse import unquote
 
 from fastapi import APIRouter, HTTPException, status
 from sqlalchemy import select
@@ -12,7 +13,7 @@ from ..deps import CurrentUser, DbSession, SettingsDep
 from ..models import Category, Sound
 from ..schemas import EditorTrimIn, SoundOut, WsSoundAddedEvent
 from ..services import editor as editor_service
-from ..services.storage import resolve_path
+from ..services.storage import resolve_local_path, resolve_path
 from ..services.tags import get_or_create_tags
 from ..ws.manager import manager
 
@@ -25,6 +26,10 @@ _YT_PREVIEW_RE = re.compile(
     r"^/api/explore/youtube/preview/([A-Za-z0-9_\-]{8,40}\.mp3)$"
 )
 _YT_PREVIEW_SUBDIR = "_yt_previews"
+
+# Local-library files are served same-origin; resolve to disk directly (same
+# rationale as YouTube previews — avoids loopback + http-only _validate_url).
+_LOCAL_FILE_RE = re.compile(r"^/api/explore/local/file\?rel=(.+)$")
 
 
 async def _load_full(session, sound_id: int) -> Sound | None:
@@ -89,6 +94,7 @@ async def trim_audio(
     else:
         assert body.source_url is not None
         preview_match = _YT_PREVIEW_RE.match(body.source_url)
+        local_match = _LOCAL_FILE_RE.match(body.source_url)
         if preview_match is not None:
             preview = settings.storage_dir / _YT_PREVIEW_SUBDIR / preview_match.group(1)
             if not preview.is_file():
@@ -97,6 +103,8 @@ async def trim_audio(
                     detail="YouTube preview expired; re-fetch it first.",
                 )
             source = preview
+        elif local_match is not None:
+            source = resolve_local_path(unquote(local_match.group(1)), settings)
         else:
             source = body.source_url
 

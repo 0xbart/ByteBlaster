@@ -139,6 +139,29 @@ class ExploreSearchOut(BaseModel):
     has_more: bool
 
 
+class LocalSound(BaseModel):
+    title: str            # filename without extension
+    rel: str              # posix relative path under local_sounds_dir
+    url: str              # /api/explore/local/file?rel=<urlencoded rel>
+    duration_ms: int | None = None
+
+
+class LocalCategory(BaseModel):
+    name: str             # top-level subfolder, or "Uncategorized" for root files
+    sounds: list[LocalSound]
+
+
+class LocalSoundsOut(BaseModel):
+    categories: list[LocalCategory]
+
+
+class LocalImportIn(BaseModel):
+    rel: str = Field(min_length=1, max_length=1024)
+    display_name: str = Field(min_length=1, max_length=120)
+    category_id: int | None = None
+    tags: list[str] = Field(default_factory=list)
+
+
 class YoutubeFetchIn(BaseModel):
     url: str = Field(min_length=4, max_length=512)
 

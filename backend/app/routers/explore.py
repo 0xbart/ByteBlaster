@@ -7,13 +7,32 @@ import time
 from pathlib import Path
 from typing import Annotated, Any
 
+from urllib.parse import quote
+
 import httpx
 from bs4 import BeautifulSoup
 from fastapi import APIRouter, HTTPException, Query, status
 from fastapi.responses import FileResponse, StreamingResponse
+from sqlalchemy import select
+from sqlalchemy.orm import selectinload
 
-from ..deps import CurrentUser, SettingsDep
-from ..schemas import ExploreResult, ExploreSearchOut, YoutubeFetchIn, YoutubeFetchOut
+from ..deps import CurrentUser, DbSession, SettingsDep
+from ..models import Category, Sound
+from ..schemas import (
+    ExploreResult,
+    ExploreSearchOut,
+    LocalCategory,
+    LocalImportIn,
+    LocalSound,
+    LocalSoundsOut,
+    SoundOut,
+    WsSoundAddedEvent,
+    YoutubeFetchIn,
+    YoutubeFetchOut,
+)
+from ..services import storage
+from ..services.tags import get_or_create_tags
+from ..ws.manager import manager
 
 router = APIRouter(prefix="/explore", tags=["explore"])
 
@@ -379,3 +398,147 @@ async def youtube_preview(token: str, settings: SettingsDep) -> FileResponse:
     if not path.is_file():
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
     return FileResponse(path, media_type="audio/mpeg", filename=token)
+
+
+# ---------------------------------------------------------------------------
+# Local library: browse/search mp3s dropped into the host `./sounds` folder
+# (bind-mounted read-only at settings.local_sounds_dir). Top-level subfolders
+# are categories; files in the root are grouped as "Uncategorized".
+# ---------------------------------------------------------------------------
+
+_UNCATEGORIZED = "Uncategorized"
+# Probing duration with mutagen is cheap per file but adds up across a big tree;
+# cache by (path, mtime, size) so repeat list calls don't re-probe.
+_duration_cache: dict[tuple[str, float, int], int | None] = {}
+
+
+def _cached_duration(path: Path) -> int | None:
+    try:
+        st = path.stat()
+    except OSError:
+        return None
+    key = (str(path), st.st_mtime, st.st_size)
+    if key in _duration_cache:
+        return _duration_cache[key]
+    ms = storage.probe_duration_ms(path)
+    if len(_duration_cache) >= 2000:
+        _duration_cache.clear()
+    _duration_cache[key] = ms
+    return ms
+
+
+@router.get("/local", response_model=LocalSoundsOut)
+async def list_local(
+    _: CurrentUser,
+    settings: SettingsDep,
+    q: Annotated[str | None, Query(max_length=64)] = None,
+) -> LocalSoundsOut:
+    base = settings.local_sounds_dir
+    if not base.is_dir():
+        return LocalSoundsOut(categories=[])
+
+    needle = (q or "").strip().lower()
+    buckets: dict[str, list[LocalSound]] = {}
+    for path in base.rglob("*"):
+        if not path.is_file() or path.suffix.lower() not in storage.LOCAL_EXT_MIME:
+            continue
+        rel = path.relative_to(base)
+        title = path.stem
+        if needle and needle not in title.lower():
+            continue
+        category = rel.parts[0] if len(rel.parts) > 1 else _UNCATEGORIZED
+        rel_posix = rel.as_posix()
+        buckets.setdefault(category, []).append(
+            LocalSound(
+                title=title,
+                rel=rel_posix,
+                url=f"/api/explore/local/file?rel={quote(rel_posix)}",
+                duration_ms=_cached_duration(path),
+            )
+        )
+
+    def _cat_sort_key(name: str) -> tuple[int, str]:
+        # Uncategorized sinks to the bottom; everything else alphabetical.
+        return (1, "") if name == _UNCATEGORIZED else (0, name.lower())
+
+    categories = [
+        LocalCategory(name=name, sounds=sorted(sounds, key=lambda s: s.title.lower()))
+        for name, sounds in sorted(buckets.items(), key=lambda kv: _cat_sort_key(kv[0]))
+    ]
+    return LocalSoundsOut(categories=categories)
+
+
+@router.get("/local/file")
+async def get_local_file(
+    _: CurrentUser,
+    settings: SettingsDep,
+    rel: Annotated[str, Query(min_length=1, max_length=1024)],
+) -> FileResponse:
+    path = storage.resolve_local_path(rel, settings)
+    return FileResponse(
+        path,
+        media_type=storage.LOCAL_EXT_MIME[path.suffix.lower()],
+        filename=path.name,
+    )
+
+
+@router.post("/local/import", response_model=SoundOut, status_code=status.HTTP_201_CREATED)
+async def import_local(
+    body: LocalImportIn,
+    user: CurrentUser,
+    session: DbSession,
+    settings: SettingsDep,
+) -> SoundOut:
+    if body.category_id is not None:
+        if (await session.get(Category, body.category_id)) is None:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Unknown category_id {body.category_id}.",
+            )
+
+    tag_objs = await get_or_create_tags(session, body.tags)
+
+    src = storage.resolve_local_path(body.rel, settings)
+    stored = storage.store_local_copy(src, settings)
+
+    sound = Sound(
+        display_name=body.display_name.strip(),
+        original_filename=src.name,
+        file_path=str(stored.path),
+        mime_type=stored.mime,
+        size_bytes=stored.size,
+        uploaded_by_user_id=user.id,
+        category_id=body.category_id,
+        duration_ms=stored.duration_ms,
+    )
+    sound.tags = tag_objs
+    session.add(sound)
+    await session.commit()
+
+    result = await session.execute(
+        select(Sound)
+        .options(
+            selectinload(Sound.uploader),
+            selectinload(Sound.category),
+            selectinload(Sound.tags),
+        )
+        .where(Sound.id == sound.id)
+    )
+    full = result.scalar_one()
+    out = SoundOut(
+        id=full.id,
+        display_name=full.display_name,
+        mime_type=full.mime_type,
+        size_bytes=full.size_bytes,
+        uploaded_by_user_id=full.uploaded_by_user_id,
+        uploader_username=full.uploader.username,
+        category_id=full.category_id,
+        category_name=full.category.name if full.category else None,
+        tags=sorted(t.name for t in full.tags),
+        created_at=full.created_at,
+        url=f"/api/sounds/{full.id}/file",
+        is_favorite=False,
+        duration_ms=full.duration_ms,
+    )
+    await manager.broadcast(WsSoundAddedEvent(sound=out, by=user.username))
+    return out

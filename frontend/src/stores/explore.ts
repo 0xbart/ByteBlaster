@@ -2,7 +2,7 @@ import { defineStore } from "pinia";
 import { ref } from "vue";
 
 import { api } from "@/api";
-import type { ExploreResult, YoutubeFetchOut } from "@/api";
+import type { ExploreResult, LocalCategory, YoutubeFetchOut } from "@/api";
 
 export const useExploreStore = defineStore("explore", () => {
   const query = ref("");
@@ -102,6 +102,39 @@ export const useExploreStore = defineStore("explore", () => {
     youtubeError.value = null;
   }
 
+  // --- Local library tab ---
+  const localCategories = ref<LocalCategory[]>([]);
+  const localLoading = ref(false);
+  const localLoaded = ref(false);
+  const localError = ref<string | null>(null);
+
+  async function loadLocal(): Promise<void> {
+    localLoading.value = true;
+    localError.value = null;
+    const { data } = await api.GET("/api/explore/local");
+    if (data) {
+      localCategories.value = data.categories;
+      localLoaded.value = true;
+    } else {
+      localError.value = "Failed to load local sounds.";
+    }
+    localLoading.value = false;
+  }
+
+  async function importLocal(
+    rel: string,
+    displayName: string,
+    categoryId: number | null,
+    tags: string[],
+  ): Promise<boolean> {
+    const { data } = await api.POST("/api/explore/local/import", {
+      body: { rel, display_name: displayName, category_id: categoryId, tags },
+    });
+    // On success the backend broadcasts sound_added, so the soundboard updates
+    // via the WS handler — nothing to do here besides report ok.
+    return !!data;
+  }
+
   return {
     query,
     page,
@@ -118,5 +151,11 @@ export const useExploreStore = defineStore("explore", () => {
     youtubeError,
     fetchYoutube,
     resetYoutube,
+    localCategories,
+    localLoading,
+    localLoaded,
+    localError,
+    loadLocal,
+    importLocal,
   };
 });
