@@ -446,7 +446,7 @@ async def list_local(
         title = path.stem
         if needle and needle not in title.lower():
             continue
-        category = rel.parts[0] if len(rel.parts) > 1 else _UNCATEGORIZED
+        category = " - ".join(rel.parts[:-1]) if len(rel.parts) > 1 else _UNCATEGORIZED
         rel_posix = rel.as_posix()
         buckets.setdefault(category, []).append(
             LocalSound(

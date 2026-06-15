@@ -1,11 +1,15 @@
 from __future__ import annotations
 
+import re
+from urllib.parse import unquote
+
 from fastapi import APIRouter, File, Form, HTTPException, UploadFile, status
 from fastapi.responses import FileResponse
 from sqlalchemy import delete, select
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.orm import selectinload
 
+from ..config import Settings
 from ..deps import AdminUser, CurrentUser, DbSession, SettingsDep
 from ..models import Category, Sound, sound_favorites
 from ..schemas import SoundOut, SoundPatchIn, WsSoundAddedEvent, WsSoundRemovedEvent, WsSoundUpdatedEvent
@@ -15,6 +19,30 @@ from ..services.tags import get_or_create_tags
 from ..ws.manager import manager
 
 router = APIRouter(prefix="/sounds", tags=["sounds"])
+
+# YouTube previews and local-library files are served same-origin via relative
+# URLs that download_url's http-only _validate_url rejects. Resolve them to disk
+# directly — same handling as the editor's source_url (see routers/editor.py).
+_YT_PREVIEW_RE = re.compile(r"^/api/explore/youtube/preview/([A-Za-z0-9_\-]{8,40}\.mp3)$")
+_YT_PREVIEW_SUBDIR = "_yt_previews"
+_LOCAL_FILE_RE = re.compile(r"^/api/explore/local/file\?rel=(.+)$")
+
+
+async def _ingest_url(url: str, settings: Settings) -> storage.StoredFile:
+    preview_match = _YT_PREVIEW_RE.match(url)
+    if preview_match is not None:
+        preview = settings.storage_dir / _YT_PREVIEW_SUBDIR / preview_match.group(1)
+        if not preview.is_file():
+            raise HTTPException(
+                status_code=404,
+                detail="YouTube preview expired; re-fetch it first.",
+            )
+        return storage.store_local_copy(preview, settings)
+    local_match = _LOCAL_FILE_RE.match(url)
+    if local_match is not None:
+        src = storage.resolve_local_path(unquote(local_match.group(1)), settings)
+        return storage.store_local_copy(src, settings)
+    return await download_url(url, settings)
 
 
 def _to_out(sound: Sound, favorite_ids: set[int] | frozenset[int] = frozenset()) -> SoundOut:
@@ -111,7 +139,7 @@ async def upload_sound(
         original_filename = file.filename
     else:
         assert url is not None
-        stored = await download_url(url, settings)
+        stored = await _ingest_url(url, settings)
         original_filename = derive_filename_from_url(url)
 
     sound = Sound(
