@@ -1,0 +1,7 @@
+/* Quick-bind mode: armed by pressing "f". Signals that the next sound-button
+   click will bind the sound to a number instead of playing it. */
+body.hotkey-bind-armed .sound-button .button.is-fullwidth {
+  cursor: crosshair;
+  outline: 2px dashed var(--bulma-link, #485fc7);
+  outline-offset: 2px;
+}

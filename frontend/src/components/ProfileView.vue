@@ -67,22 +67,76 @@
         Saved locally. Light/dark toggle (top bar) still applies under Default.
       </p>
     </div>
+
+    <!-- Quick hotkeys -->
+    <div class="box">
+      <h3 class="title is-6">Quick hotkeys</h3>
+      <p class="has-text-grey is-size-7 mb-3">
+        Bind a sound to a number key (1-0). Press the key anywhere to play it.
+        Saved locally. Tip: press <strong>f</strong> then click a sound to bind it fast.
+      </p>
+      <div class="hotkey-rows">
+        <div v-for="d in DIGITS" :key="d" class="hotkey-row">
+          <span class="hotkey-key">{{ d }}</span>
+          <b-autocomplete
+            v-model="queries[d]"
+            class="hotkey-select"
+            :data="filtered(d)"
+            field="display_name"
+            placeholder="Search sound…"
+            size="is-small"
+            clearable
+            open-on-focus
+            @select="(opt: SoundOut | null) => onSelect(d, opt)"
+          />
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from "vue";
+import { onMounted, reactive, ref } from "vue";
 import { storeToRefs } from "pinia";
 import { api } from "@/api";
-import type { MeStatsOut } from "@/api";
+import type { MeStatsOut, SoundOut } from "@/api";
 import { useUserStore } from "@/stores/user";
 import { useThemeStore, type Skin } from "@/stores/theme";
 import { useSkinSfx } from "@/composables/useSkinSfx";
+import { useHotkeysStore, DIGITS } from "@/stores/hotkeys";
+import { useSoundsStore } from "@/stores/sounds";
 
 const userStore = useUserStore();
 const { me, isAdmin, isSuperadmin } = storeToRefs(userStore);
 const theme = useThemeStore();
 const sfx = useSkinSfx();
+const hotkeys = useHotkeysStore();
+const sounds = useSoundsStore();
+
+// Per-digit autocomplete query text. Seeded from existing bindings once sounds load.
+const queries = reactive<Record<string, string>>({});
+
+function filtered(digit: string): SoundOut[] {
+  const q = (queries[digit] ?? "").trim().toLowerCase();
+  const list = sounds.sortedByName;
+  if (!q) return list;
+  return list.filter((s) => s.display_name.toLowerCase().includes(q));
+}
+
+function onSelect(digit: string, opt: SoundOut | null): void {
+  if (opt == null) hotkeys.clearSlot(digit);
+  else {
+    hotkeys.setSlot(digit, opt.id);
+    queries[digit] = opt.display_name;
+  }
+}
+
+function seedQueries(): void {
+  for (const d of DIGITS) {
+    const id = hotkeys.getSlot(d);
+    queries[d] = id == null ? "" : sounds.sounds.find((s) => s.id === id)?.display_name ?? "";
+  }
+}
 
 const stats = ref<MeStatsOut | null>(null);
 const loading = ref(false);
@@ -111,6 +165,9 @@ onMounted(async () => {
   const { data } = await api.GET("/api/me/stats");
   if (data) stats.value = data;
   loading.value = false;
+  // Need the sound list to populate the hotkey autocompletes.
+  if (!sounds.sounds.length) await sounds.refresh();
+  seedQueries();
 });
 </script>
 
@@ -203,6 +260,32 @@ onMounted(async () => {
   background: linear-gradient(135deg, #d8c9a3, #1a1a1a);
   color: #f0e8d2;
   font-family: "Georgia", serif;
+}
+.hotkey-rows {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+  gap: 0.5rem;
+}
+.hotkey-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.hotkey-key {
+  flex: 0 0 1.8rem;
+  height: 1.8rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  border-radius: 6px;
+  background: var(--bulma-scheme-main-ter, rgba(0, 0, 0, 0.08));
+}
+.hotkey-select {
+  flex: 1 1 auto;
+}
+.hotkey-select select {
+  width: 100%;
 }
 .skin-name {
   font-weight: 700;

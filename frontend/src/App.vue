@@ -248,6 +248,7 @@ import { useThemeStore } from "./stores/theme";
 import { useAudioStore } from "./stores/audio";
 import { useSoundsStore } from "./stores/sounds";
 import { useVotesStore } from "./stores/votes";
+import { useHotkeysStore } from "./stores/hotkeys";
 import { useWebSocket } from "./composables/useWebSocket";
 import { useAudioPlayer } from "./composables/useAudioPlayer";
 
@@ -274,6 +275,7 @@ useFloatingTyper(
 const audio = useAudioStore();
 const soundsStore = useSoundsStore();
 const votes = useVotesStore();
+const hotkeys = useHotkeysStore();
 const { me, loaded, needsClaim, isAdmin, isSuperadmin, isMutemaster, serverDown } = storeToRefs(userStore);
 
 function retryConnect(): void {
@@ -358,12 +360,25 @@ onBeforeUnmount(() => {
 
 function onGlobalKey(ev: KeyboardEvent): void {
   const k = ev.key.toLowerCase();
-  if (k !== "m" && k !== "k" && k !== "u" && k !== "d") return;
+  const isDigit = k.length === 1 && k >= "0" && k <= "9";
+  if (k !== "m" && k !== "k" && k !== "u" && k !== "d" && k !== "f" && !isDigit) return;
   if (ev.ctrlKey || ev.metaKey || ev.altKey) return;
   const t = ev.target as HTMLElement | null;
   if (t) {
     const tag = t.tagName;
     if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || t.isContentEditable) return;
+  }
+  if (isDigit) {
+    // Personal quick slot: play the sound bound to this number (no-op if unbound).
+    ev.preventDefault();
+    hotkeys.playSlot(k);
+    return;
+  }
+  if (k === "f") {
+    // Arm quick-bind: the next sound-button click opens the bind dialog.
+    ev.preventDefault();
+    hotkeys.toggleArm();
+    return;
   }
   if (k === "u" || k === "d") {
     // Only meaningful while a vote popup is open; otherwise let the key pass.
@@ -380,6 +395,11 @@ function onGlobalKey(ev: KeyboardEvent): void {
     void api.POST("/api/stop-all", {});
   }
 }
+
+watch(
+  () => hotkeys.armed,
+  (a) => document.body.classList.toggle("hotkey-bind-armed", a),
+);
 
 onMounted(() => {
   window.addEventListener("keydown", onGlobalKey);

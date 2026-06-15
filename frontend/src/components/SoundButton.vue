@@ -75,6 +75,7 @@
         @confirm="confirmDelete"
         @close="deleteOpen = false"
       />
+      <HotkeyBindDialog v-if="bindOpen" :sound="sound" @close="bindOpen = false" />
     </Teleport>
   </div>
 </template>
@@ -84,10 +85,12 @@ import { computed, ref } from "vue";
 import EditSoundDialog from "./EditSoundDialog.vue";
 import ConfirmDialog from "./ConfirmDialog.vue";
 import ScheduleDialog from "./ScheduleDialog.vue";
+import HotkeyBindDialog from "./HotkeyBindDialog.vue";
 import { useSoundsStore } from "@/stores/sounds";
 import { useUserStore } from "@/stores/user";
 import { useThemeStore } from "@/stores/theme";
 import { usePartyStore } from "@/stores/party";
+import { useHotkeysStore } from "@/stores/hotkeys";
 import type { SoundOut } from "@/api";
 
 const props = defineProps<{ sound: SoundOut }>();
@@ -95,6 +98,7 @@ const sounds = useSoundsStore();
 const user = useUserStore();
 const theme = useThemeStore();
 const party = usePartyStore();
+const hotkeys = useHotkeysStore();
 const bouncing = ref(false);
 let bounceTimer: number | null = null;
 
@@ -105,6 +109,7 @@ const partyStyle = computed(() =>
 const editOpen = ref(false);
 const deleteOpen = ref(false);
 const scheduleOpen = ref(false);
+const bindOpen = ref(false);
 
 const canEdit = computed(() => user.isAdmin);
 const canDelete = computed(
@@ -117,6 +122,12 @@ const tooltip = computed(() =>
 );
 
 function onPlay(): void {
+  // Quick-bind mode (armed with "f"): the next click binds instead of plays.
+  if (hotkeys.armed) {
+    hotkeys.disarm();
+    bindOpen.value = true;
+    return;
+  }
   void sounds.play(props.sound.id);
   if (party.active) {
     bouncing.value = false;

@@ -12,6 +12,7 @@ import "./styles/cyber.css";
 import "./styles/pink.css";
 import "./styles/government.css";
 import "./styles/money.css";
+import "./styles/hotkeys.css";
 
 import App from "./App.vue";
 
