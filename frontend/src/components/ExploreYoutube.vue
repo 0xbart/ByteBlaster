@@ -92,7 +92,7 @@ function onLocalPlay(u: string): void {
 }
 function onSendToEditor(): void {
   if (explore.youtubeResult) {
-    editorStore.queueFromExplore(explore.youtubeResult.preview_url, explore.youtubeResult.title);
+    editorStore.queueFromYoutube(explore.youtubeResult.preview_url, explore.youtubeResult.title);
   }
 }
 function onAdd(): void {

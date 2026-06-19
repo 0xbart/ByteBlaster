@@ -48,6 +48,13 @@ export const useEditorStore = defineStore("editor", () => {
   function queueLocal(url: string, title: string): void {
     pending.value = { url, audioUrl: url, title };
   }
+  // YouTube preview: served same-origin from /api/explore/youtube/preview/…,
+  // so the browser fetches it directly (no proxy — the myinstants proxy would
+  // reject it). Trim forwards the same URL; the backend resolves it to disk
+  // via the _YT_PREVIEW_RE branch.
+  function queueFromYoutube(url: string, title: string): void {
+    pending.value = { url, audioUrl: url, title };
+  }
   function consumePending(): { url?: string; soundId?: number; audioUrl: string; title: string } | null {
     const p = pending.value;
     pending.value = null;
@@ -83,6 +90,7 @@ export const useEditorStore = defineStore("editor", () => {
     loadExternal,
     queueFromExplore,
     queueLocal,
+    queueFromYoutube,
     consumePending,
     setRegion,
     setDuration,

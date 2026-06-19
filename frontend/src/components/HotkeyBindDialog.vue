@@ -41,6 +41,7 @@
 </template>
 
 <script setup lang="ts">
+import { onBeforeUnmount, onMounted } from "vue";
 import { useEscapeClose } from "@/composables/useEscapeClose";
 import { useHotkeysStore, DIGITS } from "@/stores/hotkeys";
 import { useSoundsStore } from "@/stores/sounds";
@@ -53,6 +54,20 @@ const hotkeys = useHotkeysStore();
 const sounds = useSoundsStore();
 
 useEscapeClose(() => emit("close"));
+
+// While the dialog is open, a digit key binds the slot instead of playing the
+// sound currently bound there. Capture phase runs before App's global keydown
+// (bubble), and stopImmediatePropagation prevents it from playing the old slot.
+function onDigitKey(ev: KeyboardEvent): void {
+  if (ev.ctrlKey || ev.metaKey || ev.altKey) return;
+  const k = ev.key;
+  if (!(DIGITS as readonly string[]).includes(k)) return;
+  ev.preventDefault();
+  ev.stopImmediatePropagation();
+  assign(k);
+}
+onMounted(() => window.addEventListener("keydown", onDigitKey, { capture: true }));
+onBeforeUnmount(() => window.removeEventListener("keydown", onDigitKey, { capture: true }));
 
 function isOccupied(d: string): boolean {
   return hotkeys.getSlot(d) != null;

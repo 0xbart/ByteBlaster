@@ -53,12 +53,21 @@ html[data-skin="cyber"] .box,
 html[data-skin="cyber"] .card,
 html[data-skin="cyber"] .panel,
 html[data-skin="cyber"] .modal-card-body,
-html[data-skin="cyber"] .editor-view,
-html[data-skin="cyber"] .board-layout > * {
+html[data-skin="cyber"] .editor-view {
   background-color: rgba(0, 12, 4, 0.78) !important;
   border: 1px solid #0c5a2c;
   box-shadow: 0 0 12px rgba(0, 255, 102, 0.18);
   backdrop-filter: blur(1px);
+}
+
+/* Board-layout children: surface styling WITHOUT backdrop-filter.
+   backdrop-filter on a layout container becomes the containing block
+   for position:fixed descendants (e.g. UploadDialog .modal), which
+   would offset modals from the viewport. */
+html[data-skin="cyber"] .board-layout > * {
+  background-color: rgba(0, 12, 4, 0.78) !important;
+  border: 1px solid #0c5a2c;
+  box-shadow: 0 0 12px rgba(0, 255, 102, 0.18);
 }
 
 html[data-skin="cyber"] .navbar.is-dark {
