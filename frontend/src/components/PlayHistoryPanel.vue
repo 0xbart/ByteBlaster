@@ -1,6 +1,6 @@
 <template>
   <aside class="history-panel">
-    <h2 class="title is-5">Recently played</h2>
+    <h2 class="title is-5">Recent activities</h2>
     <div class="scroll-area">
       <ul v-if="history.items.length" class="history-list">
         <li v-for="it in history.items" :key="it.key">
@@ -58,6 +58,18 @@
             <b-icon icon="gavel" pack="fas" size="is-small" class="play-icon" />
             <strong class="play-user">{{ it.username }}</strong>
             <em class="play-name">muted everyone</em>
+            <span class="play-time has-text-grey is-size-7">{{ relativeTime(it.at) }}</span>
+          </template>
+          <template v-else-if="it.kind === 'ban_on'">
+            <b-icon icon="ban" pack="fas" size="is-small" class="play-icon has-text-danger" />
+            <strong class="play-user">{{ it.username }}</strong>
+            <em class="play-name">banned by {{ it.by }}</em>
+            <span class="play-time has-text-grey is-size-7">{{ relativeTime(it.at) }}</span>
+          </template>
+          <template v-else-if="it.kind === 'ban_off'">
+            <b-icon icon="user-check" pack="fas" size="is-small" class="play-icon" />
+            <strong class="play-user">{{ it.username }}</strong>
+            <em class="play-name">unbanned by {{ it.by }}</em>
             <span class="play-time has-text-grey is-size-7">{{ relativeTime(it.at) }}</span>
           </template>
           <template v-else>

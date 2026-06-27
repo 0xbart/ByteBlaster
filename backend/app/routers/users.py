@@ -1,11 +1,14 @@
 from __future__ import annotations
 
+from datetime import UTC, datetime, timedelta
+
 from fastapi import APIRouter, HTTPException, status
 from sqlalchemy import select
 
 from ..deps import AdminUser, DbSession
 from ..models import User
-from ..schemas import UserOut, UserPatchIn
+from ..schemas import UserBanIn, UserOut, UserPatchIn, WsBannedEvent
+from ..ws.manager import manager
 
 router = APIRouter(prefix="/users", tags=["users"])
 
@@ -40,6 +43,49 @@ async def patch_user(
         user.is_mutemaster = bool(changes["is_mutemaster"])
     await session.commit()
     await session.refresh(user)
+    return user
+
+
+@router.post("/{user_id}/ban", response_model=UserOut)
+async def ban_user(
+    user_id: int, body: UserBanIn, caller: AdminUser, session: DbSession
+) -> User:
+    if not caller.is_superadmin:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only the superadmin can ban users.",
+        )
+    user = await session.get(User, user_id)
+    if user is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+    if user.is_superadmin:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="The superadmin cannot be banned.",
+        )
+    if body.active:
+        user.is_banned = True
+        user.ban_expires_at = (
+            datetime.now(tz=UTC) + timedelta(minutes=body.duration_minutes)
+            if body.duration_minutes is not None
+            else None
+        )
+    else:
+        user.is_banned = False
+        user.ban_expires_at = None
+    await session.commit()
+    await session.refresh(user)
+    await manager.broadcast(
+        WsBannedEvent(
+            user_id=user.id,
+            username=user.username,
+            active=user.is_banned,
+            expires_at=user.ban_expires_at,
+            by=caller.username,
+        )
+    )
+    # Update Live users presence so the ban state shows there immediately.
+    await manager.set_banned(user.id, user.is_banned)
     return user
 
 

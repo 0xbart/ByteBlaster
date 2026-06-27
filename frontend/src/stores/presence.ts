@@ -7,6 +7,7 @@ export interface PresenceUser {
   ip: string;
   is_admin?: boolean;
   is_superadmin?: boolean;
+  is_banned?: boolean;
   volume?: number;
 }
 

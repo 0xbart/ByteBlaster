@@ -10,7 +10,7 @@ from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.orm import selectinload
 
 from ..config import Settings
-from ..deps import AdminUser, CurrentUser, DbSession, SettingsDep
+from ..deps import ActiveUser, AdminUser, CurrentUser, DbSession, SettingsDep
 from ..models import Category, Sound, sound_favorites
 from ..schemas import SoundOut, SoundPatchIn, WsSoundAddedEvent, WsSoundRemovedEvent, WsSoundUpdatedEvent
 from ..services import storage
@@ -108,7 +108,7 @@ async def list_sounds(session: DbSession, user: CurrentUser) -> list[SoundOut]:
 
 @router.post("", response_model=SoundOut, status_code=status.HTTP_201_CREATED)
 async def upload_sound(
-    user: CurrentUser,
+    user: ActiveUser,
     session: DbSession,
     settings: SettingsDep,
     file: UploadFile | None = File(None),

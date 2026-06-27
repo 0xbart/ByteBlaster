@@ -1,6 +1,8 @@
 import { defineStore } from "pinia";
 import { ref } from "vue";
 
+import type { ThemeMode, Skin } from "@/stores/theme";
+
 // Bridges components to the single WebSocket owned by useWebSocket(). The
 // composable registers its send function on mount; components send through here
 // instead of opening their own socket.
@@ -14,8 +16,8 @@ export const useWsStore = defineStore("ws", () => {
   // Superadmin-only on the backend; pushes a theme override to one user.
   function setUserTheme(
     targetUserId: number,
-    mode: "light" | "dark",
-    skin: "default" | "cyber" | "pink",
+    mode: ThemeMode,
+    skin: Skin,
   ): boolean {
     return (
       sender.value?.({

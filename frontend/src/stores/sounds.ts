@@ -3,6 +3,7 @@ import { ref, computed } from "vue";
 
 import { api } from "@/api";
 import type { SoundOut } from "@/api";
+import { useBanStore } from "@/stores/ban";
 
 export const useSoundsStore = defineStore("sounds", () => {
   const sounds = ref<SoundOut[]>([]);
@@ -111,7 +112,30 @@ export const useSoundsStore = defineStore("sounds", () => {
   const rateLimited = ref<string | null>(null);
   let rateLimitTimer: number | null = null;
 
+  /** Show a transient rate-limit/throttle banner (auto-clears after 5s). */
+  function flashRateLimited(msg: string): void {
+    rateLimited.value = msg;
+    if (rateLimitTimer !== null) window.clearTimeout(rateLimitTimer);
+    rateLimitTimer = window.setTimeout(() => {
+      rateLimited.value = null;
+      rateLimitTimer = null;
+    }, 5000);
+  }
+
+  function clearRateLimited(): void {
+    if (rateLimitTimer !== null) {
+      window.clearTimeout(rateLimitTimer);
+      rateLimitTimer = null;
+    }
+    rateLimited.value = null;
+  }
+
   async function play(id: number): Promise<void> {
+    // Banned users are blocked client-side too (backend is the real gate).
+    if (useBanStore().banned) {
+      flashRateLimited("You are banned — playing is disabled.");
+      return;
+    }
     // We deliberately do NOT play locally — wait for the WS broadcast so every
     // connected client (including ourselves) plays via the same codepath.
     const { response } = await api.POST("/api/sounds/{sound_id}/play", {
@@ -125,18 +149,9 @@ export const useSoundsStore = defineStore("sounds", () => {
       } catch {
         // ignore
       }
-      rateLimited.value = msg;
-      if (rateLimitTimer !== null) window.clearTimeout(rateLimitTimer);
-      rateLimitTimer = window.setTimeout(() => {
-        rateLimited.value = null;
-        rateLimitTimer = null;
-      }, 5000);
+      flashRateLimited(msg);
     } else if (response.ok) {
-      if (rateLimitTimer !== null) {
-        window.clearTimeout(rateLimitTimer);
-        rateLimitTimer = null;
-      }
-      rateLimited.value = null;
+      clearRateLimited();
     }
   }
 
@@ -211,6 +226,7 @@ export const useSoundsStore = defineStore("sounds", () => {
     loading,
     error,
     rateLimited,
+    flashRateLimited,
     refresh,
     upload,
     update,

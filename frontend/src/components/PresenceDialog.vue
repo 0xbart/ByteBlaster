@@ -1,7 +1,7 @@
 <template>
   <div class="modal is-active">
     <div class="modal-background" @click="emit('close')" />
-    <div class="modal-card">
+    <div class="modal-card" :class="{ 'modal-card--wide': isSuperadmin }">
       <header class="modal-card-head">
         <p class="modal-card-title">
           Live users
@@ -20,6 +20,7 @@
               <th>Volume</th>
               <th>IP</th>
               <th v-if="isSuperadmin">Theme</th>
+              <th v-if="isSuperadmin">Ban</th>
             </tr>
           </thead>
           <tbody>
@@ -56,6 +57,28 @@
                 </div>
                 <span v-else class="has-text-grey">—</span>
               </td>
+              <td v-if="isSuperadmin">
+                <template v-if="u.id === me?.id || u.is_superadmin">
+                  <span class="has-text-grey">—</span>
+                </template>
+                <b-button
+                  v-else-if="u.is_banned"
+                  size="is-small"
+                  type="is-success"
+                  icon-left="account-check"
+                  @click="unban(u)"
+                >
+                  Unban
+                </b-button>
+                <div v-else class="select is-small">
+                  <select :value="''" @change="applyBan(u, $event)">
+                    <option value="" disabled>Ban…</option>
+                    <option v-for="(b, i) in banPresets" :key="b.label" :value="i">
+                      {{ b.label }}
+                    </option>
+                  </select>
+                </div>
+              </td>
             </tr>
           </tbody>
         </table>
@@ -76,6 +99,8 @@ import { usePresenceStore, type PresenceUser } from "@/stores/presence";
 import { useEscapeClose } from "@/composables/useEscapeClose";
 import { useUserStore } from "@/stores/user";
 import { useWsStore } from "@/stores/ws";
+import { useAdminStore } from "@/stores/admin";
+import type { ThemeMode, Skin } from "@/stores/theme";
 
 const emit = defineEmits<(e: "close") => void>();
 useEscapeClose(() => emit("close"));
@@ -83,11 +108,12 @@ const presence = usePresenceStore();
 const userStore = useUserStore();
 const { me, isSuperadmin } = storeToRefs(userStore);
 const ws = useWsStore();
+const admin = useAdminStore();
 
 interface ThemePreset {
   label: string;
-  mode: "light" | "dark";
-  skin: "default" | "cyber" | "pink";
+  mode: ThemeMode;
+  skin: Skin;
 }
 
 const themePresets: ThemePreset[] = [
@@ -95,6 +121,8 @@ const themePresets: ThemePreset[] = [
   { label: "Dark", mode: "dark", skin: "default" },
   { label: "Cyber", mode: "dark", skin: "cyber" },
   { label: "Pink", mode: "light", skin: "pink" },
+  { label: "Money", mode: "light", skin: "money" },
+  { label: "Government", mode: "light", skin: "government" },
 ];
 
 function applyTheme(u: PresenceUser, ev: Event): void {
@@ -106,6 +134,30 @@ function applyTheme(u: PresenceUser, ev: Event): void {
   sel.value = "";
 }
 
+interface BanPreset {
+  label: string;
+  durationMinutes: number | null;
+}
+
+const banPresets: BanPreset[] = [
+  { label: "5 minutes", durationMinutes: 5 },
+  { label: "30 minutes", durationMinutes: 30 },
+  { label: "1 hour", durationMinutes: 60 },
+  { label: "Indefinite", durationMinutes: null },
+];
+
+function applyBan(u: PresenceUser, ev: Event): void {
+  const sel = ev.target as HTMLSelectElement;
+  const b = banPresets[Number(sel.value)];
+  sel.value = "";
+  if (!b) return;
+  void admin.setBan(u.id, true, b.durationMinutes);
+}
+
+function unban(u: PresenceUser): void {
+  void admin.setBan(u.id, false, null);
+}
+
 function volumeIcon(v: number): string {
   if (v === 0) return "volume-xmark";
   if (v <= 33) return "volume-low";
@@ -113,3 +165,14 @@ function volumeIcon(v: number): string {
   return "volume-high";
 }
 </script>
+
+<style scoped>
+/* Superadmin rows carry extra columns (Theme + Ban); widen the card so the
+   table fits without horizontal scrolling. Bulma's default is 640px. */
+@media screen and (min-width: 769px) {
+  .modal-card--wide {
+    width: 850px;
+    max-width: 850px;
+  }
+}
+</style>

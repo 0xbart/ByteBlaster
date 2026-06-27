@@ -10,9 +10,11 @@ import { useGlobalMuteStore } from "@/stores/globalMute";
 import { usePartyStore } from "@/stores/party";
 import { celebrate } from "./useConfetti";
 import { usePresenceStore, type PresenceUser } from "@/stores/presence";
-import { useThemeStore } from "@/stores/theme";
+import { useThemeStore, type ThemeMode, type Skin } from "@/stores/theme";
 import { useWsStore } from "@/stores/ws";
 import { useVotesStore, type VoteVoter } from "@/stores/votes";
+import { useBanStore } from "@/stores/ban";
+import { useUserStore } from "@/stores/user";
 import { floatVote } from "./useVoteGlyph";
 import { useAudioPlayer } from "./useAudioPlayer";
 import type { PlayOut, SoundOut } from "@/api";
@@ -29,7 +31,9 @@ type WsEvent =
   | { type: "presence"; users: PresenceUser[] }
   | { type: "global_mute"; active: boolean; by: string | null; at: string | null; expires_at: string | null }
   | { type: "stop_all"; by: string }
-  | { type: "theme_set"; mode: "light" | "dark"; skin: "default" | "cyber" | "pink"; by: string };
+  | { type: "rate_limit"; scope: string; retry_in: number }
+  | { type: "banned"; user_id: number; username: string; active: boolean; expires_at: string | null; by: string }
+  | { type: "theme_set"; mode: ThemeMode; skin: Skin; by: string };
 
 function wsUrl(): string {
   const proto = window.location.protocol === "https:" ? "wss:" : "ws:";
@@ -49,6 +53,8 @@ export function useWebSocket() {
   const theme = useThemeStore();
   const wsStore = useWsStore();
   const votes = useVotesStore();
+  const ban = useBanStore();
+  const userStore = useUserStore();
   const audio = useAudioPlayer();
 
   const connected = ref(false);
@@ -110,6 +116,17 @@ export function useWebSocket() {
         break;
       case "stop_all":
         audio.stopAll();
+        break;
+      case "rate_limit":
+        sounds.flashRateLimited(`Slow down — try again in ${ev.retry_in}s.`);
+        break;
+      case "banned":
+        // Everyone logs it in the feed; only the targeted user toggles their own state.
+        history.prependBan(ev.username, ev.active, ev.by);
+        if (ev.user_id === userStore.me?.id) {
+          ban.setBan(ev.active, ev.expires_at, ev.by);
+          if (ev.active) audio.stopAll();
+        }
         break;
       case "theme_set":
         // A superadmin changed our theme remotely; apply immediately.

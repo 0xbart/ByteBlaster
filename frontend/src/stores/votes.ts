@@ -3,6 +3,7 @@ import { ref } from "vue";
 
 import { useWsStore } from "@/stores/ws";
 import { useUserStore } from "@/stores/user";
+import { useBanStore } from "@/stores/ban";
 
 // Ephemeral thumbs up/down reactions on recent plays. State mirrors the
 // backend's short-lived voting window; nothing is persisted.
@@ -66,6 +67,7 @@ export const useVotesStore = defineStore("votes", () => {
   function vote(direction: VoteDirection): void {
     const p = popup.value;
     if (!p) return;
+    if (useBanStore().banned) return; // banned users cannot vote (backend also blocks)
     // Optimistic toggle for button highlight; backend echo reconciles.
     p.myVote = p.myVote === direction ? null : direction;
     ws.sendVote(p.playId, direction);

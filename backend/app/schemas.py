@@ -15,6 +15,8 @@ class UserOut(BaseModel):
     is_admin: bool
     is_superadmin: bool
     is_mutemaster: bool = False
+    is_banned: bool = False
+    ban_expires_at: datetime | None = None
     created_at: datetime
 
     @field_validator("ip", mode="before")
@@ -37,6 +39,12 @@ class ClaimIn(BaseModel):
 class UserPatchIn(BaseModel):
     is_admin: bool | None = None
     is_mutemaster: bool | None = None
+
+
+class UserBanIn(BaseModel):
+    active: bool
+    # None while active = indefinite ban; otherwise ban expires after this many minutes.
+    duration_minutes: int | None = Field(default=None, ge=1, le=60 * 24 * 30)
 
 
 class CategoryOut(BaseModel):
@@ -274,6 +282,7 @@ class PresenceUser(BaseModel):
     ip: str
     is_admin: bool = False
     is_superadmin: bool = False
+    is_banned: bool = False
     volume: int = 100
 
     @field_validator("ip", mode="before")
@@ -310,6 +319,26 @@ class WsGlobalMuteEvent(BaseModel):
 
 class WsStopAllEvent(BaseModel):
     type: Literal["stop_all"] = "stop_all"
+    by: str
+
+
+class WsRateLimitEvent(BaseModel):
+    """Server→client: a single user's action was throttled (e.g. vote spam)."""
+
+    type: Literal["rate_limit"] = "rate_limit"
+    scope: str
+    retry_in: int
+
+
+class WsBannedEvent(BaseModel):
+    """Server→client: broadcast to all. The targeted user disables their UI;
+    everyone logs it in their activity feed."""
+
+    type: Literal["banned"] = "banned"
+    user_id: int
+    username: str
+    active: bool
+    expires_at: datetime | None = None
     by: str
 
 

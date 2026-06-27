@@ -10,10 +10,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..config import Settings, get_settings
 from ..db import get_session
-from ..deps import client_ip
+from ..deps import ban_is_active, client_ip
 from ..models import User
-from ..schemas import WsSetThemeIn, WsThemeSetEvent, WsVoteIn
-from ..services import votes
+from ..schemas import WsRateLimitEvent, WsSetThemeIn, WsThemeSetEvent, WsVoteIn
+from ..services import ratelimit, votes
 from .manager import WsClient, manager
 
 router = APIRouter()
@@ -42,6 +42,7 @@ async def ws_endpoint(
             ip=str(user.ip),
             is_admin=user.is_admin,
             is_superadmin=user.is_superadmin,
+            is_banned=user.is_banned,
         ),
     )
     # Send the current global-mute snapshot so a freshly opened tab
@@ -91,6 +92,21 @@ async def ws_endpoint(
                 try:
                     vote = WsVoteIn.model_validate(msg)
                 except ValidationError:
+                    continue
+                # Banned users cannot vote (superadmin is never banned).
+                if await ban_is_active(user, session):
+                    continue
+                retry_in = ratelimit.check(
+                    "vote",
+                    user.id,
+                    settings.rate_limit_votes,
+                    settings.rate_limit_votes_window_seconds,
+                    exempt=user.is_superadmin,
+                )
+                if retry_in is not None:
+                    await manager.send_to_user(
+                        user.id, WsRateLimitEvent(scope="vote", retry_in=retry_in)
+                    )
                     continue
                 event = await votes.record_vote(
                     vote.play_id, user.id, user.username, vote.direction

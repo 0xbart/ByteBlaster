@@ -266,6 +266,23 @@ export interface paths {
         patch: operations["patch_user"];
         trace?: never;
     };
+    "/api/users/{user_id}/ban": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Ban User */
+        post: operations["ban_user"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/stats/sounds": {
         parameters: {
             query?: never;
@@ -864,6 +881,13 @@ export interface components {
             /** Name */
             name: string;
         };
+        /** UserBanIn */
+        UserBanIn: {
+            /** Active */
+            active: boolean;
+            /** Duration Minutes */
+            duration_minutes?: number | null;
+        };
         /** UserOut */
         UserOut: {
             /** Id */
@@ -881,6 +905,13 @@ export interface components {
              * @default false
              */
             is_mutemaster: boolean;
+            /**
+             * Is Banned
+             * @default false
+             */
+            is_banned: boolean;
+            /** Ban Expires At */
+            ban_expires_at?: string | null;
             /**
              * Created At
              * Format: date-time
@@ -1549,6 +1580,41 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["UserPatchIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    ban_user: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                user_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UserBanIn"];
             };
         };
         responses: {

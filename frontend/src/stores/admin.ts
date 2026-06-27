@@ -46,6 +46,24 @@ export const useAdminStore = defineStore("admin", () => {
     return false;
   }
 
+  async function setBan(
+    id: number,
+    active: boolean,
+    durationMinutes: number | null,
+  ): Promise<boolean> {
+    const { data, response } = await api.POST("/api/users/{user_id}/ban", {
+      params: { path: { user_id: id } },
+      body: { active, duration_minutes: durationMinutes },
+    });
+    if (data) {
+      const idx = users.value.findIndex((u) => u.id === id);
+      if (idx >= 0) users.value[idx] = data;
+      return true;
+    }
+    error.value = response.status === 403 ? "Only the superadmin can ban." : "Failed.";
+    return false;
+  }
+
   async function removeUser(id: number): Promise<boolean> {
     const { response } = await api.DELETE("/api/users/{user_id}", {
       params: { path: { user_id: id } },
@@ -58,5 +76,5 @@ export const useAdminStore = defineStore("admin", () => {
     return false;
   }
 
-  return { users, error, refreshUsers, setAdmin, setMutemaster, removeUser };
+  return { users, error, refreshUsers, setAdmin, setMutemaster, setBan, removeUser };
 });

@@ -165,6 +165,10 @@
       Sounds globally muted{{ globalMute.by ? ` by ${globalMute.by}` : "" }}
       <span v-if="muteCountdown" class="ml-2 mute-countdown">· {{ muteCountdown }}</span>
     </div>
+    <div v-if="isBanned" class="audio-ban-banner">
+      <b-icon icon="ban" pack="fas" size="is-small" class="mr-2" />
+      You are banned — playing and voting are disabled{{ banUntil ? ` until ${banUntil}` : "" }}.
+    </div>
 
     <main class="section">
       <div class="container">
@@ -248,6 +252,7 @@ import { useThemeStore } from "./stores/theme";
 import { useAudioStore } from "./stores/audio";
 import { useSoundsStore } from "./stores/sounds";
 import { useVotesStore } from "./stores/votes";
+import { useBanStore } from "./stores/ban";
 import { useHotkeysStore } from "./stores/hotkeys";
 import { useWebSocket } from "./composables/useWebSocket";
 import { useAudioPlayer } from "./composables/useAudioPlayer";
@@ -275,8 +280,16 @@ useFloatingTyper(
 const audio = useAudioStore();
 const soundsStore = useSoundsStore();
 const votes = useVotesStore();
+const ban = useBanStore();
 const hotkeys = useHotkeysStore();
 const { me, loaded, needsClaim, isAdmin, isSuperadmin, isMutemaster, serverDown } = storeToRefs(userStore);
+const { banned: isBanned, expiresAt: banExpiresAt } = storeToRefs(ban);
+
+// Seed ban state on load and whenever the current user record changes.
+watch(me, (m) => ban.initFrom(m), { immediate: true });
+const banUntil = computed(() =>
+  banExpiresAt.value ? new Date(banExpiresAt.value).toLocaleTimeString() : "",
+);
 
 function retryConnect(): void {
   void userStore.fetchMe();
@@ -363,6 +376,11 @@ function onGlobalKey(ev: KeyboardEvent): void {
   const isDigit = k.length === 1 && k >= "0" && k <= "9";
   if (k !== "m" && k !== "k" && k !== "u" && k !== "d" && k !== "f" && !isDigit) return;
   if (ev.ctrlKey || ev.metaKey || ev.altKey) return;
+  // Banned users can still stop their own audio (m) but cannot play/vote/kill-all.
+  if (isBanned.value && (k === "k" || k === "u" || k === "d" || isDigit)) {
+    ev.preventDefault();
+    return;
+  }
   const t = ev.target as HTMLElement | null;
   if (t) {
     const tag = t.tagName;
@@ -392,7 +410,21 @@ function onGlobalKey(ev: KeyboardEvent): void {
     audioStop();
   } else {
     audioStop();
-    void api.POST("/api/stop-all", {});
+    void stopAll();
+  }
+}
+
+async function stopAll(): Promise<void> {
+  const { response } = await api.POST("/api/stop-all", {});
+  if (response.status === 429) {
+    let msg = "Slow down — too many kill-all.";
+    try {
+      const body = (await response.clone().json()) as { detail?: string };
+      if (body.detail) msg = body.detail;
+    } catch {
+      // ignore
+    }
+    soundsStore.flashRateLimited(msg);
   }
 }
 
@@ -683,6 +715,23 @@ watch(
   align-items: center;
   justify-content: center;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+  user-select: none;
+}
+.audio-ban-banner {
+  position: absolute;
+  top: 3.25rem;
+  left: 0;
+  right: 0;
+  z-index: 1101;
+  background: hsl(0, 0%, 15%);
+  color: #fff;
+  text-align: center;
+  padding: 0.4rem 1rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
   user-select: none;
 }
 

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import ipaddress
+from datetime import UTC, datetime
 from functools import lru_cache
 from typing import Annotated, Protocol, runtime_checkable
 
@@ -75,6 +76,38 @@ async def require_user(
     return user
 
 
+async def ban_is_active(user: User, session: AsyncSession) -> bool:
+    """Return whether ``user`` is currently banned, lazily clearing an expired ban.
+
+    A superadmin can never be banned. A ban with ``ban_expires_at`` in the past is
+    cleared (and committed) so the user is unbanned from now on.
+    """
+    if user.is_superadmin or not user.is_banned:
+        return False
+    if user.ban_expires_at is not None and user.ban_expires_at <= datetime.now(tz=UTC):
+        user.is_banned = False
+        user.ban_expires_at = None
+        await session.commit()
+        return False
+    return True
+
+
+async def require_unbanned(
+    user: Annotated[User, Depends(require_user)],
+    session: Annotated[AsyncSession, Depends(get_session)],
+) -> User:
+    if await ban_is_active(user, session):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail={
+                "error": "banned",
+                "message": "You are banned.",
+                "expires_at": user.ban_expires_at.isoformat() if user.ban_expires_at else None,
+            },
+        )
+    return user
+
+
 async def require_admin(
     user: Annotated[User, Depends(require_user)],
 ) -> User:
@@ -92,6 +125,7 @@ async def require_mutemaster(
 
 
 CurrentUser = Annotated[User, Depends(require_user)]
+ActiveUser = Annotated[User, Depends(require_unbanned)]
 AdminUser = Annotated[User, Depends(require_admin)]
 MutemasterUser = Annotated[User, Depends(require_mutemaster)]
 OptionalUser = Annotated[User | None, Depends(get_current_user_optional)]

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import Any
 
 from fastapi import WebSocket
@@ -18,6 +18,7 @@ class WsClient:
     ip: str
     is_admin: bool = False
     is_superadmin: bool = False
+    is_banned: bool = False
     volume: int = 100
 
 
@@ -55,6 +56,7 @@ class ConnectionManager:
                     ip=c.ip,
                     is_admin=c.is_admin,
                     is_superadmin=c.is_superadmin,
+                    is_banned=c.is_banned,
                     volume=vol,
                 ),
             )
@@ -108,6 +110,18 @@ class ConnectionManager:
                 for ws in dead:
                     self._clients.pop(ws, None)
 
+    async def set_banned(self, user_id: int, is_banned: bool) -> None:
+        """Reflect a ban/unban on any live sockets of a user, then re-broadcast
+        presence so the Live users list updates immediately."""
+        changed = False
+        async with self._lock:
+            for ws, c in list(self._clients.items()):
+                if c.user_id == user_id and c.is_banned != is_banned:
+                    self._clients[ws] = replace(c, is_banned=is_banned)
+                    changed = True
+        if changed:
+            await self.broadcast_presence()
+
     async def broadcast_presence(self) -> None:
         # Local import to avoid a circular dep with schemas.
         from ..schemas import PresenceUser, WsPresenceEvent
@@ -119,6 +133,7 @@ class ConnectionManager:
                 ip=c.ip,
                 is_admin=c.is_admin,
                 is_superadmin=c.is_superadmin,
+                is_banned=c.is_banned,
                 volume=c.volume,
             )
             for c in self.online_users()

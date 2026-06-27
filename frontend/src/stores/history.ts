@@ -14,7 +14,9 @@ export type FeedItem =
   | { kind: "sound_updated"; key: string; username: string; soundName: string; at: string }
   | { kind: "sound_removed"; key: string; username: string; soundName: string; at: string }
   | { kind: "mute_on"; key: string; username: string; at: string }
-  | { kind: "mute_off"; key: string; username: string | null; at: string };
+  | { kind: "mute_off"; key: string; username: string | null; at: string }
+  | { kind: "ban_on"; key: string; username: string; by: string; at: string }
+  | { kind: "ban_off"; key: string; username: string; by: string; at: string };
 
 export const useHistoryStore = defineStore("history", () => {
   const items = ref<FeedItem[]>([]);
@@ -116,6 +118,19 @@ export const useHistoryStore = defineStore("history", () => {
     ].slice(0, MAX_ITEMS);
   }
 
+  function prependBan(username: string, active: boolean, by: string): void {
+    items.value = [
+      {
+        kind: active ? ("ban_on" as const) : ("ban_off" as const),
+        key: `ban-${active ? "on" : "off"}-${username}-${Date.now()}`,
+        username,
+        by,
+        at: new Date().toISOString(),
+      },
+      ...items.value,
+    ].slice(0, MAX_ITEMS);
+  }
+
   function prependSoundAdded(username: string, soundName: string): void {
     prependSoundEvent("sound_added", username, soundName);
   }
@@ -137,5 +152,6 @@ export const useHistoryStore = defineStore("history", () => {
     prependSoundRemoved,
     prependMuteOn,
     prependMuteOff,
+    prependBan,
   };
 });

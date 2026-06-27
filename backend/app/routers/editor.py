@@ -9,7 +9,7 @@ from sqlalchemy.orm import selectinload
 
 from pathlib import Path
 
-from ..deps import CurrentUser, DbSession, SettingsDep
+from ..deps import ActiveUser, DbSession, SettingsDep
 from ..models import Category, Sound
 from ..schemas import EditorTrimIn, SoundOut, WsSoundAddedEvent
 from ..services import editor as editor_service
@@ -66,7 +66,7 @@ def _to_out(sound: Sound) -> SoundOut:
 @router.post("/trim", response_model=SoundOut)
 async def trim_audio(
     body: EditorTrimIn,
-    user: CurrentUser,
+    user: ActiveUser,
     session: DbSession,
     settings: SettingsDep,
 ) -> SoundOut:
