@@ -20,8 +20,8 @@
       </b-button>
     </div>
     <p class="has-text-grey is-size-7 mb-3">
-      Paste a YouTube URL. Audio max 90 seconds. Longer videos are rejected
-      before download.
+      Paste a YouTube URL. Audio up to 15 minutes. Clips over 90 seconds can
+      only be sent to the editor; save once trimmed under 90 seconds.
     </p>
     <p v-if="explore.youtubeError" class="has-text-danger">
       {{ explore.youtubeError }}
@@ -46,6 +46,7 @@
           <i class="fas fa-sliders" aria-hidden="true" />
         </button>
         <button
+          v-if="!explore.youtubeResult.editor_only"
           class="button is-small is-info add-btn"
           title="Add to soundboard"
           tabindex="-1"

@@ -178,6 +178,9 @@ class YoutubeFetchOut(BaseModel):
     title: str
     duration_ms: int
     preview_url: str
+    # True when the clip is longer than the direct-save threshold (90 s) and may
+    # only be sent to the editor, not added to the soundboard directly.
+    editor_only: bool
 
 
 class EditorTrimIn(BaseModel):

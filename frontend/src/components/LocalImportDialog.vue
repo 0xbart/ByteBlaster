@@ -74,7 +74,7 @@ const categories = useCategoriesStore();
 const tagsStore = useTagsStore();
 
 const displayName = ref(props.initialName ?? "");
-const categoryId = ref<number | null>(null);
+const categoryId = ref<number | null>(categories.lastCategoryId);
 const tags = ref<string[]>([]);
 const submitting = ref(false);
 const error = ref<string | null>(null);
@@ -99,6 +99,7 @@ async function submit(): Promise<void> {
     );
     if (ok) {
       tagsStore.upsertNames(tags.value);
+      categories.rememberCategory(categoryId.value);
       celebrate();
       emit("close");
     } else {

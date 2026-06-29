@@ -237,7 +237,11 @@ async def proxy_mp3(
 # YouTube → mp3 via yt-dlp (max 90 s, served from temp preview directory)
 # ---------------------------------------------------------------------------
 
-MAX_YT_DURATION_S = 90
+# Hard ceiling: videos longer than this are rejected before download.
+MAX_YT_DURATION_S = 900  # 15 min
+# Videos longer than this may only be sent to the editor, not saved directly
+# (enforced server-side in routers/sounds.py on the preview-ingest path).
+MAX_YT_DIRECT_DURATION_S = 90
 _PREVIEW_SUBDIR = "_yt_previews"
 _PREVIEW_TTL_SECONDS = 3600.0
 _TOKEN_RE = re.compile(r"^[A-Za-z0-9_\-]{8,40}\.mp3$")
@@ -376,17 +380,14 @@ async def youtube_fetch(
             detail="yt-dlp did not produce an mp3 file.",
         )
 
-    if out_path.stat().st_size > settings.max_upload_bytes:
-        out_path.unlink(missing_ok=True)
-        raise HTTPException(
-            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
-            detail="Extracted audio exceeds the upload size limit.",
-        )
-
+    # No size reject here: long previews (up to 15 min) may exceed the upload
+    # limit but are temp files (1 h TTL) only saveable via the editor, which
+    # re-checks the trimmed output size.
     return YoutubeFetchOut(
         title=title,
         duration_ms=int(round(duration_s * 1000)),
         preview_url=f"/api/explore/youtube/preview/{token}.mp3",
+        editor_only=duration_s > MAX_YT_DIRECT_DURATION_S,
     )
 
 

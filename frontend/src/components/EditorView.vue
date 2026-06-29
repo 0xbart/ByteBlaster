@@ -119,7 +119,7 @@ const regionPlaying = ref(false);
 const pickQuery = ref("");
 const urlInput = ref("");
 const displayName = ref("");
-const categoryId = ref<number | null>(null);
+const categoryId = ref<number | null>(categories.lastCategoryId);
 const tags = ref<string[]>([]);
 const error = ref<string | null>(null);
 const saving = ref(false);
@@ -138,7 +138,7 @@ const canSave = computed(
     !!editor.sourceAudioUrl &&
     displayName.value.trim().length > 0 &&
     editor.endSec > editor.startSec &&
-    editor.endSec - editor.startSec <= 60,
+    editor.endSec - editor.startSec <= 90,
 );
 
 function onPickSound(s: SoundOut | null): void {
@@ -158,7 +158,7 @@ function onClearAll(): void {
   pickQuery.value = "";
   urlInput.value = "";
   displayName.value = "";
-  categoryId.value = null;
+  categoryId.value = categories.lastCategoryId;
   tags.value = [];
   error.value = null;
 }
@@ -261,6 +261,7 @@ async function onSave(): Promise<void> {
   if (data) {
     celebrate();
     tagsStore.upsertNames(tags.value);
+    categories.rememberCategory(categoryId.value);
     onClearAll();
   } else {
     let msg = "Save failed.";

@@ -7,7 +7,7 @@
         <button class="delete" aria-label="close" @click="emit('close')" />
       </header>
       <section class="modal-card-body">
-        <b-field label="Files (mp3 or wav, max 10 MB each)">
+        <b-field label="Files (mp3 or wav, max 25 MB each)">
           <b-upload
             v-model="files"
             accept=".mp3,.wav,audio/mpeg,audio/wav,audio/x-wav"
@@ -106,7 +106,7 @@ const tagsStore = useTagsStore();
 const files = ref<File[]>([]);
 const url = ref(props.initialUrl ?? "");
 const displayName = ref(props.initialName ?? "");
-const categoryId = ref<number | null>(null);
+const categoryId = ref<number | null>(categories.lastCategoryId);
 const tags = ref<string[]>([]);
 const submitting = ref(false);
 
@@ -161,6 +161,7 @@ async function submit(): Promise<void> {
       }
       if (allOk) {
         tagsStore.upsertNames(tags.value);
+        categories.rememberCategory(categoryId.value);
         celebrate();
         emit("close");
       }
@@ -171,6 +172,7 @@ async function submit(): Promise<void> {
     const ok = await sounds.upload(source, displayName.value.trim(), categoryId.value, tags.value);
     if (ok) {
       tagsStore.upsertNames(tags.value);
+      categories.rememberCategory(categoryId.value);
       celebrate();
       emit("close");
     }

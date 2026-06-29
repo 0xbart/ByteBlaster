@@ -61,8 +61,20 @@ export const useSoundsStore = defineStore("sounds", () => {
     });
     if (!data) {
       if (response.status === 415) error.value = "File type not supported (mp3/wav only).";
-      else if (response.status === 413) error.value = "File too large (max 10 MB).";
-      else if (response.status === 422) error.value = "Invalid tag (1–32 chars, max 10).";
+      else if (response.status === 413) error.value = "File too large (max 25 MB).";
+      else if (response.status === 422) {
+        // Surface backend detail (e.g. "longer than 90 s — trim in the editor"),
+        // falling back to the common tag-validation message.
+        const fallback = "Invalid tag (1–32 chars, max 10).";
+        try {
+          const body = (await response.clone().json()) as { detail?: unknown };
+          // Our explicit HTTPException(422) sets a string detail; pydantic
+          // validation errors set an array — only surface the string form.
+          error.value = typeof body.detail === "string" ? body.detail : fallback;
+        } catch {
+          error.value = fallback;
+        }
+      }
       else if (response.status === 400) {
         // Try to surface the backend's detail (URL fetch errors, bad URL, etc.).
         try {

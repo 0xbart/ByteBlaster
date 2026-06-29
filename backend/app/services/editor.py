@@ -12,7 +12,7 @@ from ..config import Settings
 from .download import _validate_url
 from .storage import CHUNK, StoredFile, probe_duration_ms
 
-MAX_CUT_SECONDS = 60.0
+MAX_CUT_SECONDS = 90.0
 
 
 async def _fetch_to_tmp(source_url: str, settings: Settings) -> Path:

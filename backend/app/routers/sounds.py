@@ -15,6 +15,7 @@ from ..models import Category, Sound, sound_favorites
 from ..schemas import SoundOut, SoundPatchIn, WsSoundAddedEvent, WsSoundRemovedEvent, WsSoundUpdatedEvent
 from ..services import storage
 from ..services.download import derive_filename_from_url, download_url
+from .explore import MAX_YT_DIRECT_DURATION_S
 from ..services.tags import get_or_create_tags
 from ..ws.manager import manager
 
@@ -36,6 +37,13 @@ async def _ingest_url(url: str, settings: Settings) -> storage.StoredFile:
             raise HTTPException(
                 status_code=404,
                 detail="YouTube preview expired; re-fetch it first.",
+            )
+        duration_ms = storage.probe_duration_ms(preview)
+        if duration_ms is not None and duration_ms > MAX_YT_DIRECT_DURATION_S * 1000:
+            raise HTTPException(
+                status_code=422,
+                detail=f"Audio is longer than {MAX_YT_DIRECT_DURATION_S} s — "
+                "trim it in the editor first.",
             )
         return storage.store_local_copy(preview, settings)
     local_match = _LOCAL_FILE_RE.match(url)
@@ -261,4 +269,14 @@ async def get_sound_file(
     if sound is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
     path = storage.resolve_path(sound.file_path, settings)
-    return FileResponse(path, media_type=sound.mime_type, filename=sound.original_filename or path.name)
+    # A given sound_id's file is write-once: editing/trimming always creates a new
+    # Sound with a new id + file_path (see routers/editor.py). So the content behind
+    # this URL never changes → safe to cache immutably. This removes per-play download
+    # and revalidation latency, which was the dominant cause of cross-client playback
+    # skew (one client cached, another fetching).
+    return FileResponse(
+        path,
+        media_type=sound.mime_type,
+        filename=sound.original_filename or path.name,
+        headers={"Cache-Control": "public, max-age=31536000, immutable"},
+    )

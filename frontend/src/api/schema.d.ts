@@ -965,6 +965,8 @@ export interface components {
             duration_ms: number;
             /** Preview Url */
             preview_url: string;
+            /** Editor Only */
+            editor_only: boolean;
         };
     };
     responses: never;
