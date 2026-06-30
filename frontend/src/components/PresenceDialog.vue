@@ -140,6 +140,7 @@ interface BanPreset {
 }
 
 const banPresets: BanPreset[] = [
+  { label: "1 minute", durationMinutes: 1 },
   { label: "5 minutes", durationMinutes: 5 },
   { label: "30 minutes", durationMinutes: 30 },
   { label: "1 hour", durationMinutes: 60 },

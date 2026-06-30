@@ -34,6 +34,7 @@ export interface VoteEvent {
 interface Popup {
   playId: number;
   name: string;
+  playedBy: string;
   expiresAt: number;
   myVote: VoteDirection | null;
 }
@@ -58,9 +59,9 @@ export const useVotesStore = defineStore("votes", () => {
     }
   }
 
-  function openPopup(playId: number, name: string): void {
+  function openPopup(playId: number, name: string, playedBy: string): void {
     if (timer !== null) window.clearTimeout(timer);
-    popup.value = { playId, name, expiresAt: Date.now() + POPUP_MS, myVote: null };
+    popup.value = { playId, name, playedBy, expiresAt: Date.now() + POPUP_MS, myVote: null };
     timer = window.setTimeout(close, POPUP_MS);
   }
 

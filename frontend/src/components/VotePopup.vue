@@ -3,11 +3,14 @@
     <div v-if="votes.popup" class="vote-popup" role="dialog" aria-label="Rate this sound">
       <div class="vote-popup__head">
         <span class="vote-popup__name" :title="votes.popup.name">
-          <i class="fas fa-music mr-1" aria-hidden="true" />{{ votes.popup.name }}
+          <i class="fas fa-music fa-fw mr-1" aria-hidden="true" />{{ votes.popup.name }}
         </span>
         <button class="vote-popup__close" aria-label="Dismiss" @click="votes.close()">
           <i class="fas fa-xmark" aria-hidden="true" />
         </button>
+      </div>
+      <div class="vote-popup__by" :title="votes.popup.playedBy">
+        <i class="fas fa-user fa-fw mr-1" aria-hidden="true" />{{ votes.popup.playedBy }}
       </div>
       <div class="vote-popup__actions">
         <span class="vote-popup__label">rate it?</span>
@@ -97,6 +100,14 @@ onBeforeUnmount(() => {
 .vote-popup__name {
   font-size: 0.85rem;
   font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.vote-popup__by {
+  font-size: 0.72rem;
+  color: var(--bulma-text-weak, #888);
+  margin-bottom: 0.4rem;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;

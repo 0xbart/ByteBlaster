@@ -12,8 +12,8 @@
               class="play-icon play-icon--clickable"
               @click="sounds.play(it.soundId)"
             />
-            <strong class="play-user">{{ it.username }}</strong>
-            <em class="play-name">{{ it.soundName }}</em>
+            <strong class="play-user" :title="it.username">{{ clipName(it.username) }}</strong>
+            <em class="play-name" :title="it.soundName">{{ it.soundName }}</em>
             <span
               v-if="voteTally(it.playId)"
               class="vote-tally is-size-7"
@@ -26,55 +26,55 @@
           </template>
           <template v-else-if="it.kind === 'join'">
             <b-icon icon="link" pack="fas" size="is-small" class="play-icon" />
-            <strong class="play-user">{{ it.username }}</strong>
+            <strong class="play-user" :title="it.username">{{ clipName(it.username) }}</strong>
             <em class="play-name has-text-grey">came online</em>
             <span class="play-time has-text-grey is-size-7">{{ relativeTime(it.at) }}</span>
           </template>
           <template v-else-if="it.kind === 'leave'">
             <b-icon icon="link-slash" pack="fas" size="is-small" class="play-icon" />
-            <strong class="play-user">{{ it.username }}</strong>
+            <strong class="play-user" :title="it.username">{{ clipName(it.username) }}</strong>
             <em class="play-name has-text-grey">went offline</em>
             <span class="play-time has-text-grey is-size-7">{{ relativeTime(it.at) }}</span>
           </template>
           <template v-else-if="it.kind === 'sound_added'">
             <b-icon icon="circle-plus" pack="fas" size="is-small" class="play-icon" />
-            <strong class="play-user">{{ it.username }}</strong>
-            <em class="play-name">added {{ it.soundName }}</em>
+            <strong class="play-user" :title="it.username">{{ clipName(it.username) }}</strong>
+            <em class="play-name" :title="`added ${it.soundName}`">added {{ it.soundName }}</em>
             <span class="play-time has-text-grey is-size-7">{{ relativeTime(it.at) }}</span>
           </template>
           <template v-else-if="it.kind === 'sound_updated'">
             <b-icon icon="pencil" pack="fas" size="is-small" class="play-icon" />
-            <strong class="play-user">{{ it.username }}</strong>
-            <em class="play-name">edited {{ it.soundName }}</em>
+            <strong class="play-user" :title="it.username">{{ clipName(it.username) }}</strong>
+            <em class="play-name" :title="`edited ${it.soundName}`">edited {{ it.soundName }}</em>
             <span class="play-time has-text-grey is-size-7">{{ relativeTime(it.at) }}</span>
           </template>
           <template v-else-if="it.kind === 'sound_removed'">
             <b-icon icon="trash" pack="fas" size="is-small" class="play-icon" />
-            <strong class="play-user">{{ it.username }}</strong>
-            <em class="play-name">deleted {{ it.soundName }}</em>
+            <strong class="play-user" :title="it.username">{{ clipName(it.username) }}</strong>
+            <em class="play-name" :title="`deleted ${it.soundName}`">deleted {{ it.soundName }}</em>
             <span class="play-time has-text-grey is-size-7">{{ relativeTime(it.at) }}</span>
           </template>
           <template v-else-if="it.kind === 'mute_on'">
             <b-icon icon="gavel" pack="fas" size="is-small" class="play-icon" />
-            <strong class="play-user">{{ it.username }}</strong>
+            <strong class="play-user" :title="it.username">{{ clipName(it.username) }}</strong>
             <em class="play-name">muted everyone</em>
             <span class="play-time has-text-grey is-size-7">{{ relativeTime(it.at) }}</span>
           </template>
           <template v-else-if="it.kind === 'ban_on'">
             <b-icon icon="ban" pack="fas" size="is-small" class="play-icon has-text-danger" />
-            <strong class="play-user">{{ it.username }}</strong>
-            <em class="play-name">banned by {{ it.by }}</em>
+            <strong class="play-user" :title="it.username">{{ clipName(it.username) }}</strong>
+            <em class="play-name" :title="`banned (${banDuration(it.durationMinutes)}) by ${it.by}`">banned ({{ banDuration(it.durationMinutes) }}) by {{ it.by }}</em>
             <span class="play-time has-text-grey is-size-7">{{ relativeTime(it.at) }}</span>
           </template>
           <template v-else-if="it.kind === 'ban_off'">
             <b-icon icon="user-check" pack="fas" size="is-small" class="play-icon" />
-            <strong class="play-user">{{ it.username }}</strong>
-            <em class="play-name">unbanned by {{ it.by }}</em>
+            <strong class="play-user" :title="it.username">{{ clipName(it.username) }}</strong>
+            <em class="play-name" :title="`unbanned by ${it.by}`">unbanned by {{ it.by }}</em>
             <span class="play-time has-text-grey is-size-7">{{ relativeTime(it.at) }}</span>
           </template>
           <template v-else>
             <b-icon icon="volume-high" pack="fas" size="is-small" class="play-icon" />
-            <strong class="play-user">{{ it.username ?? "auto" }}</strong>
+            <strong class="play-user" :title="it.username ?? 'auto'">{{ clipName(it.username) }}</strong>
             <em class="play-name">lifted mute</em>
             <span class="play-time has-text-grey is-size-7">{{ relativeTime(it.at) }}</span>
           </template>
@@ -94,6 +94,20 @@ import { useVotesStore, type VoteTally } from "@/stores/votes";
 const history = useHistoryStore();
 const sounds = useSoundsStore();
 const votes = useVotesStore();
+
+function banDuration(mins: number | null): string {
+  if (mins === null || mins <= 0) return "permanently";
+  if (mins < 60) return `${mins} min`;
+  const hours = Math.round(mins / 60);
+  if (hours < 24) return `${hours} ${hours === 1 ? "hour" : "hours"}`;
+  const days = Math.round(hours / 24);
+  return `${days} ${days === 1 ? "day" : "days"}`;
+}
+
+function clipName(name: string | null | undefined): string {
+  const n = name ?? "auto";
+  return n.length > 17 ? `${n.slice(0, 17)}…` : n;
+}
 
 function voteTally(playId: number): VoteTally | null {
   return votes.tally(playId);

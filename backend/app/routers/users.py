@@ -81,6 +81,7 @@ async def ban_user(
             username=user.username,
             active=user.is_banned,
             expires_at=user.ban_expires_at,
+            duration_minutes=body.duration_minutes if user.is_banned else None,
             by=caller.username,
         )
     )

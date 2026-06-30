@@ -342,6 +342,8 @@ class WsBannedEvent(BaseModel):
     username: str
     active: bool
     expires_at: datetime | None = None
+    # None while active = indefinite ban; otherwise the chosen ban length.
+    duration_minutes: int | None = None
     by: str
 
 

@@ -32,7 +32,7 @@ type WsEvent =
   | { type: "global_mute"; active: boolean; by: string | null; at: string | null; expires_at: string | null }
   | { type: "stop_all"; by: string }
   | { type: "rate_limit"; scope: string; retry_in: number }
-  | { type: "banned"; user_id: number; username: string; active: boolean; expires_at: string | null; by: string }
+  | { type: "banned"; user_id: number; username: string; active: boolean; expires_at: string | null; duration_minutes: number | null; by: string }
   | { type: "theme_set"; mode: ThemeMode; skin: Skin; by: string };
 
 function wsUrl(): string {
@@ -82,7 +82,7 @@ export function useWebSocket() {
           played_at: ev.at,
         } satisfies PlayOut);
         stats.bump(ev.sound_id, ev.display_name, ev.by);
-        votes.openPopup(ev.play_id, ev.display_name);
+        votes.openPopup(ev.play_id, ev.display_name, ev.by);
         if (party.active) celebrate();
         break;
       case "vote":
@@ -122,7 +122,7 @@ export function useWebSocket() {
         break;
       case "banned":
         // Everyone logs it in the feed; only the targeted user toggles their own state.
-        history.prependBan(ev.username, ev.active, ev.by);
+        history.prependBan(ev.username, ev.active, ev.by, ev.duration_minutes);
         if (ev.user_id === userStore.me?.id) {
           ban.setBan(ev.active, ev.expires_at, ev.by);
           if (ev.active) audio.stopAll();
