@@ -1,11 +1,15 @@
 from __future__ import annotations
 
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.routing import APIRoute
 
 from .config import get_settings
 from .routers import categories, editor, explore, global_mute, me, plays, sounds, stats, tags, users
+from .services import ban as ban_service
 from .ws import router as ws_router
 
 
@@ -14,12 +18,20 @@ def _operation_id(route: APIRoute) -> str:
     return route.name
 
 
+@asynccontextmanager
+async def lifespan(_: FastAPI) -> AsyncIterator[None]:
+    # Re-arm auto-unban tasks for bans that outlived a backend restart.
+    await ban_service.reschedule_all()
+    yield
+
+
 settings = get_settings()
 
 app = FastAPI(
     title="ByteBlaster API",
     version="0.1.0",
     generate_unique_id_function=_operation_id,
+    lifespan=lifespan,
 )
 
 app.add_middleware(

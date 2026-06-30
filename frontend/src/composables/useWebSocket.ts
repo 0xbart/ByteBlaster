@@ -32,7 +32,7 @@ type WsEvent =
   | { type: "global_mute"; active: boolean; by: string | null; at: string | null; expires_at: string | null }
   | { type: "stop_all"; by: string }
   | { type: "rate_limit"; scope: string; retry_in: number }
-  | { type: "banned"; user_id: number; username: string; active: boolean; expires_at: string | null; duration_minutes: number | null; by: string }
+  | { type: "banned"; user_id: number; username: string; active: boolean; expires_at: string | null; duration_minutes: number | null; by: string | null }
   | { type: "theme_set"; mode: ThemeMode; skin: Skin; by: string };
 
 function wsUrl(): string {

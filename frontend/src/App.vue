@@ -165,11 +165,6 @@
       Sounds globally muted{{ globalMute.by ? ` by ${globalMute.by}` : "" }}
       <span v-if="muteCountdown" class="ml-2 mute-countdown">· {{ muteCountdown }}</span>
     </div>
-    <div v-if="isBanned" class="audio-ban-banner">
-      <b-icon icon="ban" pack="fas" size="is-small" class="mr-2" />
-      You are banned — playing and voting are disabled{{ banUntil ? ` until ${banUntil}` : "" }}.
-    </div>
-
     <main class="section">
       <div class="container">
         <div v-if="serverDown" class="server-down has-text-centered py-6">
@@ -208,6 +203,7 @@
 
     <PresenceDialog v-if="presenceOpen" @close="presenceOpen = false" />
     <VotePopup />
+    <BanLockOverlay />
   </div>
 </template>
 
@@ -240,6 +236,7 @@ import ActiveUsersPanel from "./components/ActiveUsersPanel.vue";
 import AdminPanel from "./components/AdminPanel.vue";
 import PresenceDialog from "./components/PresenceDialog.vue";
 import VotePopup from "./components/VotePopup.vue";
+import BanLockOverlay from "./components/BanLockOverlay.vue";
 import { useUserStore } from "./stores/user";
 import { useCategoriesStore } from "./stores/categories";
 import { useTagsStore } from "./stores/tags";
@@ -283,13 +280,10 @@ const votes = useVotesStore();
 const ban = useBanStore();
 const hotkeys = useHotkeysStore();
 const { me, loaded, needsClaim, isAdmin, isSuperadmin, isMutemaster, serverDown } = storeToRefs(userStore);
-const { banned: isBanned, expiresAt: banExpiresAt } = storeToRefs(ban);
+const { banned: isBanned } = storeToRefs(ban);
 
 // Seed ban state on load and whenever the current user record changes.
 watch(me, (m) => ban.initFrom(m), { immediate: true });
-const banUntil = computed(() =>
-  banExpiresAt.value ? new Date(banExpiresAt.value).toLocaleTimeString() : "",
-);
 
 function retryConnect(): void {
   void userStore.fetchMe();
@@ -717,22 +711,4 @@ watch(
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
   user-select: none;
 }
-.audio-ban-banner {
-  position: absolute;
-  top: 3.25rem;
-  left: 0;
-  right: 0;
-  z-index: 1101;
-  background: hsl(0, 0%, 15%);
-  color: #fff;
-  text-align: center;
-  padding: 0.4rem 1rem;
-  font-weight: 700;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
-  user-select: none;
-}
-
 </style>

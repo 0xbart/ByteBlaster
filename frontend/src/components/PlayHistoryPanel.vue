@@ -68,8 +68,11 @@
           </template>
           <template v-else-if="it.kind === 'ban_off'">
             <b-icon icon="user-check" pack="fas" size="is-small" class="play-icon" />
-            <strong class="play-user" :title="it.username">{{ clipName(it.username) }}</strong>
-            <em class="play-name" :title="`unbanned by ${it.by}`">unbanned by {{ it.by }}</em>
+            <template v-if="it.by">
+              <strong class="play-user" :title="it.username">{{ clipName(it.username) }}</strong>
+              <em class="play-name" :title="`unbanned by ${it.by}`">unbanned by {{ it.by }}</em>
+            </template>
+            <em v-else class="play-name" :title="`Ban ${it.username} expired`">Ban {{ clipName(it.username) }} expired</em>
             <span class="play-time has-text-grey is-size-7">{{ relativeTime(it.at) }}</span>
           </template>
           <template v-else>
@@ -95,8 +98,8 @@ const history = useHistoryStore();
 const sounds = useSoundsStore();
 const votes = useVotesStore();
 
-function banDuration(mins: number | null): string {
-  if (mins === null || mins <= 0) return "permanently";
+function banDuration(mins: number | null | undefined): string {
+  if (mins == null || !Number.isFinite(mins) || mins <= 0) return "permanently";
   if (mins < 60) return `${mins} min`;
   const hours = Math.round(mins / 60);
   if (hours < 24) return `${hours} ${hours === 1 ? "hour" : "hours"}`;

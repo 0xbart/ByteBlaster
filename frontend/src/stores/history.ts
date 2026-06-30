@@ -15,8 +15,8 @@ export type FeedItem =
   | { kind: "sound_removed"; key: string; username: string; soundName: string; at: string }
   | { kind: "mute_on"; key: string; username: string; at: string }
   | { kind: "mute_off"; key: string; username: string | null; at: string }
-  | { kind: "ban_on"; key: string; username: string; by: string; at: string; durationMinutes: number | null }
-  | { kind: "ban_off"; key: string; username: string; by: string; at: string };
+  | { kind: "ban_on"; key: string; username: string; by: string | null; at: string; durationMinutes: number | null }
+  | { kind: "ban_off"; key: string; username: string; by: string | null; at: string };
 
 export const useHistoryStore = defineStore("history", () => {
   const items = ref<FeedItem[]>([]);
@@ -121,7 +121,7 @@ export const useHistoryStore = defineStore("history", () => {
   function prependBan(
     username: string,
     active: boolean,
-    by: string,
+    by: string | null,
     durationMinutes: number | null = null,
   ): void {
     const at = new Date().toISOString();

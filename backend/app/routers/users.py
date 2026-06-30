@@ -8,6 +8,7 @@ from sqlalchemy import select
 from ..deps import AdminUser, DbSession
 from ..models import User
 from ..schemas import UserBanIn, UserOut, UserPatchIn, WsBannedEvent
+from ..services import ban as ban_service
 from ..ws.manager import manager
 
 router = APIRouter(prefix="/users", tags=["users"])
@@ -75,6 +76,11 @@ async def ban_user(
         user.ban_expires_at = None
     await session.commit()
     await session.refresh(user)
+    # (Re)arm or cancel the auto-unban background task.
+    if user.is_banned and user.ban_expires_at is not None:
+        ban_service.schedule(user.id, user.ban_expires_at)
+    else:
+        ban_service.cancel(user.id)
     await manager.broadcast(
         WsBannedEvent(
             user_id=user.id,

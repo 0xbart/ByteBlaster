@@ -344,7 +344,8 @@ class WsBannedEvent(BaseModel):
     expires_at: datetime | None = None
     # None while active = indefinite ban; otherwise the chosen ban length.
     duration_minutes: int | None = None
-    by: str
+    # None = automatic (timed) unban; otherwise the admin who toggled it.
+    by: str | None = None
 
 
 # Theme override pushed by a superadmin to a single target user. mode = Bulma
